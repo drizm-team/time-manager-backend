@@ -12,7 +12,7 @@ class Note(models.Model):
         auto_now_add=True,
         editable=False
     )
-    content = models.TextField()
+    content = models.TextField(null=True)
 
     class Meta:
         ordering = ("-created",)

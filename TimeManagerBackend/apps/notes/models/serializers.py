@@ -20,6 +20,9 @@ class NotesSerializer(HrefModelSerializer):
             },
             "self": {
                 "view_name": "notes:note-detail"
+            },
+            "content": {
+                "required": False
             }
         }
 

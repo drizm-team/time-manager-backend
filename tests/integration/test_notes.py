@@ -31,6 +31,10 @@ class TestNotes(APITestCase):
         assert res.status_code == status.HTTP_200_OK
         assert Note.objects.get(pk=pk).creator == self.user
 
+        # try without content
+        res = self.client.put(url)
+        assert res.status_code == status.HTTP_200_OK
+
         res = self.client.put(url, data={
             "content": "Again Something else idk"
         })
