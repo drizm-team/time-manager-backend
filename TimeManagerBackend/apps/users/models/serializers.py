@@ -24,6 +24,16 @@ class UserSerializer(serializers.Serializer):
         write_only=True,
         required=True
     )
+    first_name = serializers.CharField(
+        min_length=2,
+        max_length=150,
+        required=False
+    )
+    last_name = serializers.CharField(
+        min_length=2,
+        max_length=150,
+        required=False
+    )
 
     def create(self, validated_data):
         model = get_user_model()

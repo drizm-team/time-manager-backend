@@ -25,7 +25,17 @@ class TestUsers(APITestCase):
             "password": "somePassword420"
         })
         assert res.status_code == status.HTTP_201_CREATED
-        assert list(res.json().keys()) == ["self", "email"]
+        assert set(res.json().keys()) == {
+            "self", "email", "first_name", "last_name"
+        }
+
+        res = self.client.post(url, data={
+            "email": "whatever@tester.de",
+            "password": "somePassword420",
+            "first_name": "Ben",
+            "last_name": "Dover"
+        })
+        assert res.status_code == status.HTTP_201_CREATED
 
         res = self.client.post(url, data={
             "email": "tester@tester.de",
