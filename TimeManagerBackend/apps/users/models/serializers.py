@@ -84,3 +84,12 @@ class UserResponseSchema(serializers.Serializer):  # noqa must implement abstrac
         view_name="users:user-detail"
     )
     email = serializers.EmailField()
+
+
+class PasswordChangeSerializer(serializers.Serializer):  # noqa must implement abstract
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+
+class TokenDestroySchema(serializers.Serializer):  # noqa must implement abstract
+    refresh = serializers.CharField(required=True)

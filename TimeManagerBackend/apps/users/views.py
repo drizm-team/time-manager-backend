@@ -1,9 +1,16 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
 from rest_framework import viewsets, mixins
+from rest_framework.decorators import action, api_view, permission_classes
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import (
     TokenObtainPairView as __TokenObtainPairView,
     TokenRefreshView as __TokenRefreshView,
@@ -15,8 +22,12 @@ from .models.serializers import (
     CustomTokenObtainPairSerializer,
     ObtainSchema,
     RefreshSchema,
-    UserResponseSchema
+    UserResponseSchema,
+    PasswordChangeSerializer,
+    UserSerializer,
+    TokenDestroySchema
 )
+from ..errors.errors import PasswordMismatchException
 
 
 @method_decorator(
@@ -71,6 +82,37 @@ class TokenVerifyView(__TokenVerifyView):
     pass
 
 
+@swagger_auto_schema(
+    method="post",
+    operation_summary="Delete Token",
+    operation_description="Destroys or deletes a token. "
+                          "May be used to facilitate logout behaviour.",
+    request_body=TokenDestroySchema,
+    responses={
+        status.HTTP_205_RESET_CONTENT: "Operation Successful",
+        status.HTTP_401_UNAUTHORIZED: "Refresh token invalid"
+    },
+    security=[]
+)
+@api_view(["POST"])
+@permission_classes([permissions.AllowAny])
+def token_destroy_view(request, *args, **kwargs):
+    serializer = TokenDestroySchema(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    try:
+        token = RefreshToken(serializer.validated_data.get("refresh"))
+        token.blacklist()
+    except TokenError as e:
+        raise InvalidToken(e.args[0])
+    return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
+@api_view(["POST"])
+def __manage_flush_expired__():
+    """ Stub for the flushexpiredtokens management task invocation """
+    pass
+
+
 @method_decorator(
     name="create", decorator=swagger_auto_schema(
         operation_summary="Create User",
@@ -116,10 +158,10 @@ class UserViewSet(viewsets.GenericViewSet,
 
     def get_permissions(self):
         if self.action == "create":
-            permission_classes = [permissions.AllowAny]
+            permission_classes_ = [permissions.AllowAny]
         else:
-            permission_classes = [permissions.IsAuthenticated]
-        return [permission() for permission in permission_classes]
+            permission_classes_ = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes_]
 
     @swagger_auto_schema(
         operation_summary="Update User",
@@ -145,6 +187,60 @@ class UserViewSet(viewsets.GenericViewSet,
 
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        method="post",
+        operation_summary="Change Password",
+        request_body=PasswordChangeSerializer,
+        responses={
+            status.HTTP_205_RESET_CONTENT: "Operation Successful",
+            status.HTTP_403_FORBIDDEN: "Not allowed to perform this operation"
+                                       "on the requested user"
+        }
+    )
+    @action(methods=["post"], url_path="change-password", detail=True)
+    def change_password(self, request, *args, **kwargs):
+        requested_user = get_object_or_404(
+            self.get_queryset(), pk=kwargs.get("pk")
+        )
+        requesting_user = request.user
+        if not requested_user == requesting_user:
+            raise PermissionDenied
+
+        # make sure that the request payload is valid
+        serializer = PasswordChangeSerializer(
+            data=request.data,
+            context=self.get_serializer_context()
+        )
+        serializer.is_valid(raise_exception=True)
+
+        # check that the old_password is identical to the stored one
+        if not check_password(
+                serializer.validated_data.get("old_password"),
+                requesting_user.password
+        ):
+            raise PasswordMismatchException
+
+        # change the password
+        user_serializer = UserSerializer(
+            requesting_user,
+            data={
+                "password": serializer.validated_data.get("new_password")
+            },
+            partial=True
+        )
+        user_serializer.is_valid(raise_exception=True)
+        user_serializer.save()
+
+        # find all refresh tokens of the user and blacklist them
+        try:
+            tokens = OutstandingToken.objects.filter(user=requesting_user)
+            for token in tokens:
+                token = RefreshToken(token.token)
+                token.blacklist()
+        except TokenError as e:
+            raise InvalidToken(e.args[0])
+        return Response(status=status.HTTP_205_RESET_CONTENT)
+
 
 user_viewset_list = UserViewSet.as_view({
     "get": "list",
@@ -154,4 +250,7 @@ user_viewset_detail = UserViewSet.as_view({
     "get": "retrieve",
     "patch": "update",
     "delete": "destroy"
+})
+user_viewset_change_password = UserViewSet.as_view({
+    "post": "change_password"
 })

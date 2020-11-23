@@ -1,13 +1,14 @@
-from django.contrib import admin
-from django.urls import path, include, re_path
-from .docs.openapi import schema_view
 from django.conf import settings
+from django.urls import path, include, re_path
 from django.views.generic.base import RedirectView
+
 from .apps.users.views import (
     TokenObtainPairView,
     TokenRefreshView,
     TokenVerifyView,
+    token_destroy_view
 )
+from .docs.openapi import schema_view
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
 
@@ -25,6 +26,7 @@ urlpatterns = [
     path('tokens/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('tokens/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('tokens/verify/', TokenVerifyView.as_view(), name='token_verify'),
+    path('tokens/destroy/', token_destroy_view, name='token_destroy'),
 
     # User defined URL paths
     path(

@@ -12,9 +12,10 @@ class TestUsers(APITestCase):
         self.detail = self.app_base % "detail"
 
         User = get_user_model()
+        self.user_pw = "ShittySecurity69"
         User.objects.create_user(
             email="realuser@tester.de",
-            password="ShittySecurity69"
+            password=self.user_pw
         )
         self.user = User.objects.get(id=1)
 
@@ -104,9 +105,11 @@ class TestUsers(APITestCase):
             res = self.client.patch(url, update_data)
             assert res.status_code == status.HTTP_200_OK
 
+        # fail if email not unique
         res = self.client.patch(url, {"email": "sth@tester.de"})
         assert res.status_code == status.HTTP_400_BAD_REQUEST
 
+        # 404 for nonexistent user
         url = reverse(self.detail, args=(5,))
         res = self.client.patch(url, {"email": "sth@tester.de"})
         assert res.status_code == status.HTTP_404_NOT_FOUND
@@ -132,3 +135,45 @@ class TestUsers(APITestCase):
         assert res.status_code == status.HTTP_204_NO_CONTENT
 
         self.client.force_authenticate(user=None)
+
+    def test060_change_password(self):
+        # first, obtain the tokens
+        res = self.client.post(
+            reverse("token_obtain_pair"), data={
+                "email": self.user.email,
+                "password": self.user_pw
+            }
+        )
+        assert res.status_code == status.HTTP_200_OK
+        refresh = res.json().get("refresh")
+
+        # now make sure this refresh token works
+        res = self.client.post(
+            reverse("token_refresh"), data={
+                "refresh": refresh
+            }
+        )
+        assert res.status_code == status.HTTP_200_OK
+
+        url = reverse("users:user-change-password", args=(1,))
+        new_pw = "somethignNewidkdkdkjd"
+        change = {
+            "old_password": self.user_pw,
+            "new_password": new_pw
+        }
+        # try changing password but not logged in
+        res = self.client.post(url, data=change)
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # change password and then check that the token does not work anymore
+        self.client.force_authenticate(user=self.user)
+        res = self.client.post(url, data=change)
+        assert res.status_code == status.HTTP_205_RESET_CONTENT
+        self.client.force_authenticate(user=None)
+
+        res = self.client.post(
+            reverse("token_refresh"), data={
+                "refresh": refresh
+            }
+        )
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
