@@ -100,8 +100,8 @@ CORS_EXPOSE_HEADERS = [
     "Content-Disposition"
 ]
 CORS_ALLOWED_ORIGINS = [
-    "chrono.drizm.com",
-    "api.chrono.drizm.com"
+    "https://chrono.drizm.com",
+    "https://api.chrono.drizm.com"
 ]
 CORS_ALLOW_CREDENTIALS = True
 
