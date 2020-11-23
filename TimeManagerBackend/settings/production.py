@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework',
     'drf_yasg',
+    'corsheaders',
 
     # User defined apps
     'TimeManagerBackend.apps.errors',
@@ -50,7 +51,7 @@ if os.getenv("MIGRATION_MODE"):
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+        'rest_framework.permissions.IsAuthenticated'
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -83,7 +84,7 @@ DEBUG = False
 AUTH_USER_MODEL = 'users.User'
 
 ALLOWED_HOSTS = [
-    "run1.drizm.com"
+    "api.chrono.drizm.com"
 ]
 
 # CORS Configuration
@@ -99,7 +100,8 @@ CORS_EXPOSE_HEADERS = [
     "Content-Disposition"
 ]
 CORS_ALLOWED_ORIGINS = [
-    "run1.drizm.com"
+    "chrono.drizm.com",
+    "api.chrono.drizm.com"
 ]
 CORS_ALLOW_CREDENTIALS = True
 
