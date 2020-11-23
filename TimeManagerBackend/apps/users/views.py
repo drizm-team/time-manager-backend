@@ -3,10 +3,13 @@ from django.contrib.auth.hashers import check_password
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
+from google.oauth2 import id_token
+import google.auth.transport.requests
 from rest_framework import permissions, status
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
@@ -28,6 +31,7 @@ from .models.serializers import (
     TokenDestroySchema
 )
 from ..errors.errors import PasswordMismatchException
+from django.core.management import call_command
 
 
 @method_decorator(
@@ -107,10 +111,20 @@ def token_destroy_view(request, *args, **kwargs):
     return Response(status=status.HTTP_205_RESET_CONTENT)
 
 
+@swagger_auto_schema(method="post", auto_schema=None)
 @api_view(["POST"])
-def __manage_flush_expired__():
+def __manage_flush_expired__(request: Request, *args, **kwargs) -> Response:
     """ Stub for the flushexpiredtokens management task invocation """
-    pass
+    try:
+        req = google.auth.transport.requests.Request()
+        payload = id_token.verify_token(
+            request.auth, request=req
+        )
+    except Exception:  # noqa E722
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    call_command("flushexpiredtokens")
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 @method_decorator(
