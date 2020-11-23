@@ -1,0 +1,15 @@
+server {
+    charset     utf-8;
+    include mime.types;
+    etag off;
+    server_tokens off;
+    add_header X-XSS-Protection "1; mode=block";
+    listen ${NGINX_PORT};
+    server_name ${NGINX_HOST};
+    client_max_body_size 100M;
+
+    location / {
+        uwsgi_pass  localhost:3031;
+        include     uwsgi_params;
+    }
+}
