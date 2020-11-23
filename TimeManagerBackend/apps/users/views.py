@@ -1,10 +1,13 @@
+import logging
+
+import google.auth.transport.requests
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
+from django.core.management import call_command
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from google.oauth2 import id_token
-import google.auth.transport.requests
 from rest_framework import permissions, status
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import action, api_view, permission_classes
@@ -31,7 +34,6 @@ from .models.serializers import (
     TokenDestroySchema
 )
 from ..errors.errors import PasswordMismatchException
-from django.core.management import call_command
 
 
 @method_decorator(
@@ -115,6 +117,9 @@ def token_destroy_view(request, *args, **kwargs):
 @api_view(["POST"])
 def __manage_flush_expired__(request: Request, *args, **kwargs) -> Response:
     """ Stub for the flushexpiredtokens management task invocation """
+    logging.warning(request)
+    logging.warning(args)
+    logging.warning(kwargs)
     try:
         req = google.auth.transport.requests.Request()
         payload = id_token.verify_token(
