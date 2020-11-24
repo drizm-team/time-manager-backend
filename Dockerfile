@@ -1,30 +1,14 @@
-FROM debian:stable-slim AS build
+FROM python:3.8.6-buster
 
-RUN apt-get update && apt-get install -y \
-    curl ca-certificates mime-support python3-dev build-essential zlib1g-dev libssl-dev \
-    libffi-dev libsqlite3-dev sqlite3
+RUN apt-get update -y
+RUN apt-get install -y nginx nginx-extras gcc libsqlite3-dev \
+    python3-dev curl ca-certificates mime-support
 
-RUN apt-get install make --reinstall
+# Install envsubst
+RUN apt-get -y install gettext-base \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
-# Build Python
-WORKDIR /opt/cpython3/
-RUN curl -O "https://www.python.org/ftp/python/3.8.2/Python-3.8.2.tar.xz"
-RUN tar -xf "Python-3.8.2.tar.xz"
-WORKDIR Python-3.8.2
-RUN ./configure --enable-optimizations
-RUN make -j "$(nproc)"
-
-
-
-FROM nginx:stable
-
-RUN apt-get update && apt-get install -y \
-    curl ca-certificates mime-support make gcc libsqlite3-dev python3-dev
-
-# Install Python
-COPY --from=build /opt/cpython3 /opt/cpython3
-WORKDIR /opt/cpython3/Python-3.8.2/
-RUN make install
 RUN python3.8 -m pip install poetry uwsgi
 
 # Copy apps and related dependencies
