@@ -182,10 +182,14 @@ if os.getenv("K_SERVICE"):
             }
         },
         'loggers': {
-            '': {
+            'cloud': {
                 'handlers': ['stackdriver'],
                 'level': 'INFO',
-                'name': "default"
-            }
-        },
+                'name': "cloud"
+            },
+            'django.request': {
+                'handlers': ['stackdriver'],
+                'level': 'WARN',
+            },
+        }
     }
