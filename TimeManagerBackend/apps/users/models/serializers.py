@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.validators import UniqueValidator
+from django.contrib.auth.hashers import make_password
 
 
 class UserSerializer(serializers.Serializer):
@@ -40,7 +41,9 @@ class UserSerializer(serializers.Serializer):
         return model.objects.create_user(**validated_data)
 
     def update(self, instance, validated_data):
-        instance.password = validated_data.get("password", instance.password)
+        instance.password = make_password(
+            validated_data.get("password", instance.password)
+        )
         instance.save()
         return instance
 
