@@ -289,7 +289,9 @@ class UserViewSet(viewsets.GenericViewSet,
 
         # find all refresh tokens of the user and blacklist them
         try:
-            tokens = OutstandingToken.objects.filter(user=requesting_user)
+            tokens = OutstandingToken.objects.filter(
+                user=requesting_user, blacklistedtoken__isnull=True
+            )
             for token in tokens:
                 token = RefreshToken(token.token)
                 token.blacklist()

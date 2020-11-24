@@ -177,3 +177,19 @@ class TestUsers(APITestCase):
             }
         )
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # check that old password must match actual
+        user = get_user_model().objects.get(pk=1)
+        self.client.force_authenticate(user=user)
+        change = {
+            "old_password": new_pw,
+            "new_password": self.user_pw
+        }
+        res = self.client.post(url, data={
+            "old_password": "okaywhatever123",
+            "new_password": self.user_pw
+        })
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+        res = self.client.post(url, data=change)
+        assert res.status_code == status.HTTP_205_RESET_CONTENT
+        self.client.force_authenticate(user=None)
