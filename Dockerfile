@@ -19,7 +19,7 @@ RUN make -j "$(nproc)"
 FROM nginx:stable
 
 RUN apt-get update && apt-get install -y \
-    curl ca-certificates mime-support make gcc libsqlite3-dev
+    curl ca-certificates mime-support make gcc libsqlite3-dev python3-dev
 
 # Install Python
 COPY --from=build /opt/cpython3 /opt/cpython3
