@@ -17,7 +17,7 @@ infrastructure:
 - CloudScheduler Cron
 
 CloudScheduler Cron frequency:
-0 */24 * * *
+0 0 * * *
 
 The CloudScheduler Cron must be invoked
 through the exodia service account.
