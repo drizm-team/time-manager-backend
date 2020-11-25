@@ -16,12 +16,12 @@ locations=("/application" "/uwsgi.ini")
 
 for location in "${locations[@]}"; do
   chmod -R 770 "$location"
-  chown -R root:nginx "$location"
+  chown -R root:www-data "$location"
 done
 
 # Configure user and group for uwsgi to run on
 uwsgi_user="uwsgi-django"
-useradd -G nginx --system --no-create-home "$uwsgi_user"
+useradd -G www-data --system --no-create-home "$uwsgi_user"
 
 uwsgi /uwsgi.ini --uid "$(id -u $uwsgi_user)" --gid "$(id -g $uwsgi_user)" &
 exec "$@"
