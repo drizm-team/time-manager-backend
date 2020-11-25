@@ -21,3 +21,22 @@ CloudScheduler Cron frequency:
 
 The CloudScheduler Cron must be invoked
 through the exodia service account.
+
+## Local Deployment
+
+For local development, the following steps
+need to be taken:
+- Add keys folder at project root
+- Add exodia.json to afor mentioned folder,
+containing the service-account key for the
+super-admin of the project
+- Add TimeManagerBackend/settings/keys.py
+file, containing SECRET_KEY = "<some-value>"
+- In the .terraform directory, add a new
+file called terraform.tfvars, containing
+values for all the variables in the
+variables.tf file.
+
+Once everything is done, simply run:
+>cd docker
+>docker-compose up --build
