@@ -1,3 +1,8 @@
+from django.conf.global_settings import (
+    STATICFILES_STORAGE as DEFAULT_STATIC_STORAGE,
+    DEFAULT_FILE_STORAGE as DEFAULT_FILE_BACKEND
+)
+
 from .production import *  # noqa
 
 DEBUG = True
@@ -34,6 +39,10 @@ MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
 INTERNAL_IPS = [
     "127.0.0.1"
 ]
+ALLOWED_HOSTS = []
 
 STATIC_URL = '/static/'
 STATIC_ROOT = '/var/django/projects/TimeManagerBackend/static/'  # noqa
+
+STATICFILES_STORAGE = DEFAULT_STATIC_STORAGE
+DEFAULT_FILE_STORAGE = DEFAULT_FILE_BACKEND

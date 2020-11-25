@@ -4,6 +4,7 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.validators import UniqueValidator
+from django.contrib.auth.hashers import make_password
 
 
 class UserSerializer(serializers.Serializer):
@@ -24,13 +25,25 @@ class UserSerializer(serializers.Serializer):
         write_only=True,
         required=True
     )
+    first_name = serializers.CharField(
+        min_length=2,
+        max_length=150,
+        required=False
+    )
+    last_name = serializers.CharField(
+        min_length=2,
+        max_length=150,
+        required=False
+    )
 
     def create(self, validated_data):
         model = get_user_model()
         return model.objects.create_user(**validated_data)
 
     def update(self, instance, validated_data):
-        instance.password = validated_data.get("password", instance.password)
+        instance.password = make_password(
+            validated_data.get("password", instance.password)
+        )
         instance.save()
         return instance
 
@@ -74,3 +87,12 @@ class UserResponseSchema(serializers.Serializer):  # noqa must implement abstrac
         view_name="users:user-detail"
     )
     email = serializers.EmailField()
+
+
+class PasswordChangeSerializer(serializers.Serializer):  # noqa must implement abstract
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+
+class TokenDestroySchema(serializers.Serializer):  # noqa must implement abstract
+    refresh = serializers.CharField(required=True)

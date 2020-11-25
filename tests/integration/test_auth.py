@@ -17,6 +17,7 @@ class TestAuth(APITestCase):
         self.obtain = reverse("token_obtain_pair")
         self.verify = reverse("token_verify")
         self.refresh = reverse("token_refresh")
+        self.destroy = reverse("token_destroy")
 
     def self_obtain_tokens(self, credentials: dict):
         return self.client.post(self.obtain, data=credentials)
@@ -64,4 +65,16 @@ class TestAuth(APITestCase):
         assert res.status_code == status.HTTP_200_OK
 
         res = self.client.post(self.refresh, data={"refresh": "drhdrtzdrt"})
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test050_destroy(self):
+        res = self.self_obtain_tokens({
+            "email": self.user.email,
+            "password": self.user_pw
+        })
+        refresh_token = res.json().get("refresh")
+        res = self.client.post(self.destroy, data={"refresh": refresh_token})
+        assert res.status_code == status.HTTP_205_RESET_CONTENT
+
+        res = self.client.post(self.destroy, data={"refresh": "iungjhbghibikju"})
         assert res.status_code == status.HTTP_401_UNAUTHORIZED

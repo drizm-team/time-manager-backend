@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'corsheaders',
+    'rest_framework_simplejwt.token_blacklist',
 
     # User defined apps
     'TimeManagerBackend.apps.errors',
@@ -73,8 +74,10 @@ STATIC_URL = '/static/'
 GS_BUCKET_NAME = terraform.vars.static_bucket_name
 GS_PROJECT_ID = terraform.vars.project_name
 STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+
+GS_CREDENTIALS_FILE = Path(__file__).parents[2] / "keys" / "exodia.json"
 GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
-    Path(__file__).parents[2] / "keys" / "exodia.json"
+    GS_CREDENTIALS_FILE
 )
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "media"),
@@ -161,3 +164,32 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_L10N = True
 USE_TZ = True
+
+# if we are running on CloudRun, configure stackdriver logging
+if os.getenv("K_SERVICE"):
+    from google.cloud import logging
+
+    client = logging.Client().from_service_account_json(GS_CREDENTIALS_FILE)
+    # Connects the logger to the root logging handler; by default
+    # this captures all logs at INFO level and higher
+    client.setup_logging()
+    LOGGING = {
+        'version': 1,
+        'handlers': {
+            'stackdriver': {
+                'class': 'google.cloud.logging.handlers.CloudLoggingHandler',
+                'client': client
+            }
+        },
+        'loggers': {
+            'cloud': {
+                'handlers': ['stackdriver'],
+                'level': 'INFO',
+                'name': "cloud"
+            },
+            'django.request': {
+                'handlers': ['stackdriver'],
+                'level': 'WARN',
+            },
+        }
+    }

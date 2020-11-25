@@ -27,4 +27,13 @@ class NotFoundException(APIException):
     status_code = 404
 
 
-__all__ = ["ValidationError", "EmailInUse", "NotFoundException"]
+class PasswordMismatchException(APIException):
+    default_code = "password_mismatch"
+    default_detail = "Provided password does not match actual"
+    status_code = 400
+
+
+__all__ = [
+    "ValidationError", "EmailInUse",
+    "NotFoundException", "PasswordMismatchException"
+]

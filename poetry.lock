@@ -328,6 +328,21 @@ grpc = ["grpcio (>=1.8.2,<2.0dev)"]
 
 [[package]]
 category = "main"
+description = "Stackdriver Logging API client library"
+name = "google-cloud-logging"
+optional = false
+python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
+version = "1.15.1"
+
+[package.dependencies]
+google-cloud-core = ">=1.1.0,<2.0dev"
+
+[package.dependencies.google-api-core]
+extras = ["grpc"]
+version = ">=1.15.0,<2.0.0dev"
+
+[[package]]
+category = "main"
 description = "Google Cloud Storage API client library"
 name = "google-cloud-storage"
 optional = false
@@ -677,7 +692,7 @@ secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "cer
 socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 
 [metadata]
-content-hash = "b99c8b4831b2abbd15f056f11b1fca40acb2918f84915bc135a507536ce05ad1"
+content-hash = "82bd40f1990beebef90eb10937b93aae13e1764d33a0fff3e141e02194433788"
 python-versions = "^3.8, <3.9"
 
 [metadata.files]
@@ -809,6 +824,10 @@ google-auth = [
 google-cloud-core = [
     {file = "google-cloud-core-1.4.3.tar.gz", hash = "sha256:21afb70c1b0bce8eeb8abb5dca63c5fd37fc8aea18f4b6d60e803bd3d27e6b80"},
     {file = "google_cloud_core-1.4.3-py2.py3-none-any.whl", hash = "sha256:75abff9056977809937127418323faa3917f32df68490704d39a4f0d492ebc2b"},
+]
+google-cloud-logging = [
+    {file = "google-cloud-logging-1.15.1.tar.gz", hash = "sha256:cb0d4af9d684eb8a416f14c39d9fa6314be3adf41db2dd8ee8e30db9e8853d90"},
+    {file = "google_cloud_logging-1.15.1-py2.py3-none-any.whl", hash = "sha256:20c7557fd170891eab1a5e428338ad646203ddc519bc2fc57fd59bef14cd3602"},
 ]
 google-cloud-storage = [
     {file = "google-cloud-storage-1.33.0.tar.gz", hash = "sha256:900ba027bdee6b97f21cd22d1db3d1a6233ede5de2db4754db860438bdad72d2"},
