@@ -33,14 +33,15 @@ INSTALLED_APPS = [
     'TimeManagerBackend.apps.notes'
 ]
 
-CLOUD_SQL_CONN_NAME = "time-manager-295921:europe-west4:time-manager-backend-db"
+CLOUD_SQL_CONN_NAME = f"{terraform.vars.project_name}:" \
+                      f"{terraform.vars.project_region}:{terraform.vars.db_service_name}"
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'HOST': f"/cloudsql/{CLOUD_SQL_CONN_NAME}",
         'PORT': "5432",
-        'NAME': "time-manager-main-database",
+        'NAME': terraform.vars.db_name,
         'USER': terraform.vars.db_username,
         'PASSWORD': terraform.vars.db_password,
     }
@@ -75,7 +76,7 @@ GS_BUCKET_NAME = terraform.vars.static_bucket_name
 GS_PROJECT_ID = terraform.vars.project_name
 STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
 
-GS_CREDENTIALS_FILE = Path(__file__).parents[2] / "keys" / "exodia.json"
+GS_CREDENTIALS_FILE = Path(__file__).parents[2] / "keys" / "exodia_cron.json"
 GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
     GS_CREDENTIALS_FILE
 )
@@ -87,7 +88,7 @@ DEBUG = False
 AUTH_USER_MODEL = 'users.User'
 
 ALLOWED_HOSTS = [
-    "api.chrono.drizm.com"
+    terraform.vars.srv_deploy_domain
 ]
 
 # CORS Configuration
