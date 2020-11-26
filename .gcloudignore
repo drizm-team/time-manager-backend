@@ -1,1 +1,7 @@
 tests
+*.egg-info
+.terraform/.terraform
+__pycache__
+.idea
+*.sqlite3
+!docker
