@@ -35,6 +35,9 @@ class TestNotes(APITestCase):
         res = self.client.put(url)
         assert res.status_code == status.HTTP_200_OK
 
+        res = self.client.put(url, data={"content": ""})
+        assert res.status_code == status.HTTP_200_OK
+
         res = self.client.put(url, data={
             "content": "Again Something else idk"
         })

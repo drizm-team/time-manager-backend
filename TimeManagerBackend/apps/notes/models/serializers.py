@@ -22,7 +22,8 @@ class NotesSerializer(HrefModelSerializer):
                 "view_name": "notes:note-detail"
             },
             "content": {
-                "required": False
+                "required": False,
+                "allow_blank": True
             }
         }
 
