@@ -32,6 +32,12 @@ through the exodia service account.
 - Docker Desktop installed
 - Access to GCP Console
 
+#### keys.py Contents
+
+SECRET_KEY = str  
+PROM_USER = str(email)  
+PROM_PASSWORD = str  
+
 For local development, the following steps
 need to be taken:
 - Add keys folder at project root
@@ -39,7 +45,7 @@ need to be taken:
 containing the service-account key for the
 super-admin of the project (exodia_cron)
 - Add TimeManagerBackend/settings/keys.py
-file, containing SECRET_KEY = "<some-value>"
+file, above listed contents
 - In the .terraform directory, add a new
 file called terraform.tfvars, containing
 values for all the variables in the
@@ -65,3 +71,8 @@ For initial deployment:
 
 For refresh deployments:  
 ``bash.deploy.sh``
+
+## Documentation
+
+Setting for keys-folder:  
+GCP_CREDENTIALS = Path
