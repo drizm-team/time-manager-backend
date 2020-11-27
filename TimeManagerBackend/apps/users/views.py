@@ -1,16 +1,11 @@
-import json
 import logging
 
-import google.auth.transport.requests
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
-from drizm_commons.utils import Path
-from google.oauth2 import id_token
 from rest_framework import permissions, status
 from rest_framework import viewsets, mixins
 from rest_framework.decorators import (
@@ -31,6 +26,10 @@ from rest_framework_simplejwt.views import (
     TokenVerifyView as __TokenVerifyView,
 )
 
+from TimeManagerBackend.lib.gcp_auth import (
+    IsServiceAccount,
+    ServiceAccountIDTokenAuthStrictWhenLive
+)
 from .models import serializers
 from .models.serializers import (
     CustomTokenObtainPairSerializer,
@@ -123,46 +122,12 @@ def token_destroy_view(request, *args, **kwargs):
 
 @swagger_auto_schema(method="post", auto_schema=None)
 @api_view(["POST"])
-@permission_classes([])
-@authentication_classes([])
+@authentication_classes([ServiceAccountIDTokenAuthStrictWhenLive])
+@permission_classes([IsServiceAccount])
 def __manage_flush_expired__(request: Request, *args, **kwargs) -> Response:
     """ Endpoint for the flushexpiredtokens management task invocation """
     logger = logging.getLogger("cloud")
-    logger.warning(request.META)
     logger.warning("Management Endpoint invoked")
-    auth = request.META.get("HTTP_AUTHORIZATION").split()
-    if auth[0] != "Bearer":
-        return Response(
-            {"status": "Bad Auth Scheme"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    token = auth[1]
-
-    try:
-        req = google.auth.transport.requests.Request()
-        payload = id_token.verify_token(
-            token, request=req
-        )
-        logger.warning(payload)
-    except Exception:  # noqa E722
-        return Response(
-            {"status": "Bad Token Scheme"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-
-    authorized_service_account = settings.GS_CREDENTIALS
-    with open(Path(settings.GS_CREDENTIALS_FILE), "r") as fin:
-        content = json.load(fin)
-    if (
-        not payload.get("iss") == "https://accounts.google.com"
-        or not payload.get("email") == authorized_service_account.service_account_email
-        or not payload.get("email_verified", False)
-        or not payload.get("sub") == content.get("client_id")
-    ):
-        return Response(
-            {"status": "Bad Token Scheme"},
-            status=status.HTTP_400_BAD_REQUEST
-        )
 
     call_command("flushexpiredtokens")
     # we need to include *some* content or Google will flag it as a 400 or 500
