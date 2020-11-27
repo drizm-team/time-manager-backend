@@ -6,6 +6,9 @@ for the time-manager project.
 The project can currently be found at:
 https://api.chrono.drizm.com/
 
+Current live version (Commit hash):
+bf98712f
+
 ## Related Infrastructure
 
 This project requires the following
