@@ -61,7 +61,9 @@ class TestUsers(APITestCase):
         assert res.status_code == status.HTTP_200_OK
         assert type(content) == list and len(content) == 1
         assert [
-            utils.all_keys_present(u, ("self", "email")) for u in content
+            utils.all_keys_present(u, (
+                "self", "email", "first_name", "last_name"
+            )) for u in content
         ]
         self.client.force_authenticate(user=None)
 
@@ -75,7 +77,9 @@ class TestUsers(APITestCase):
         content = res.json()
         assert res.status_code == status.HTTP_200_OK
         assert type(content) == dict
-        assert utils.all_keys_present(content, ("self", "email"))
+        assert utils.all_keys_present(
+            content, ("self", "email", "first_name", "last_name")
+        )
         assert utils.url_is_http(content["self"]["href"])
 
         url = reverse(self.detail, args=(3,))
