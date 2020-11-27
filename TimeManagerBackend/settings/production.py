@@ -11,6 +11,10 @@ terraform = Tfvars(
     Path(__file__).parents[2] / ".terraform" / "terraform.tfvars"
 )
 
+# Both of these are used for the custom GCP-Auth
+GCP_CREDENTIALS = Path(__file__).parents[2] / "keys"
+SERVICE_ACCOUNT_GROUP_NAME = "gcp_service_accounts"
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 INSTALLED_APPS = [
     'drizm_django_commons',  # manage.py overrides
