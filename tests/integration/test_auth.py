@@ -12,7 +12,7 @@ class TestAuth(APITestCase):
             email="realuser@tester.de",
             password=self.user_pw
         )
-        self.user = User.objects.get(id=1)
+        self.user = User.objects.filter(email="realuser@tester.de").first()
 
         self.obtain = reverse("token_obtain_pair")
         self.verify = reverse("token_verify")
