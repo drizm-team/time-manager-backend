@@ -37,7 +37,7 @@ cd ./.terraform
 terraform get
 terraform fmt
 
-if [[ "$1" -eq "--initial" ]]; then
+if [[ "$1" == "--initial" ]]; then
   terraform plan -out="./terraform.plan"
   echo "In case anything about the plan is wrong, you can quit now."
   echo "To quit, press Enter, type anything to proceed."
