@@ -1,11 +1,15 @@
 import os
+import sys
+from datetime import timedelta
+
 import django
+from drizm_commons.utils import Tfvars, Path
 from google.oauth2 import service_account
 
 from TimeManagerBackend.docs.settings import *  # noqa
-from datetime import timedelta
-from drizm_commons.utils import Tfvars, Path
 from .keys import *  # noqa
+
+TESTING = 'test' in sys.argv  # detect if we are running tests
 
 terraform = Tfvars(
     Path(__file__).parents[2] / ".terraform" / "terraform.tfvars"

@@ -1,5 +1,3 @@
-import sys
-
 from django.conf.global_settings import (
     STATICFILES_STORAGE as DEFAULT_STATIC_STORAGE,
     DEFAULT_FILE_STORAGE as DEFAULT_FILE_BACKEND
@@ -8,7 +6,6 @@ from django.conf.global_settings import (
 from .production import *  # noqa
 
 DEBUG = True
-TESTING = 'test' in sys.argv  # detect if we are running tests
 
 DATABASES = {
     'default': {
