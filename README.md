@@ -7,7 +7,7 @@ The project can currently be found at:
 https://api.chrono.drizm.com/
 
 Current live version (Commit hash):
-bf98712f
+f3e7e811
 
 ## Related Infrastructure
 
