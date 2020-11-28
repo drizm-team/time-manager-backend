@@ -17,7 +17,7 @@ class TestUsers(APITestCase):
             email="realuser@tester.de",
             password=self.user_pw
         )
-        self.user = User.objects.get(id=1)
+        self.user = User.objects.filter(email="realuser@tester.de").first()
 
     def test010_create(self):
         url = reverse(self.list)
@@ -68,7 +68,7 @@ class TestUsers(APITestCase):
         self.client.force_authenticate(user=None)
 
     def test030_retrieve(self):
-        url = reverse(self.detail, args=(1,))
+        url = reverse(self.detail, args=(self.user.pk,))
         res = self.client.get(url)
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -89,7 +89,7 @@ class TestUsers(APITestCase):
         self.client.force_authenticate(user=None)
 
     def test040_update(self):
-        url = reverse(self.detail, args=(1,))
+        url = reverse(self.detail, args=(self.user.pk,))
         res = self.client.patch(url)
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -121,7 +121,7 @@ class TestUsers(APITestCase):
         self.client.force_authenticate(user=None)
 
     def test050_delete(self):
-        url = reverse(self.detail, args=(1,))
+        url = reverse(self.detail, args=(self.user.pk,))
         res = self.client.delete(url)
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
         get_user_model().objects.create_user(
@@ -134,7 +134,7 @@ class TestUsers(APITestCase):
         res = self.client.delete(url)
         assert res.status_code == status.HTTP_404_NOT_FOUND
 
-        url = reverse(self.detail, args=(1,))
+        url = reverse(self.detail, args=(self.user.pk,))
         res = self.client.delete(url)
         assert res.status_code == status.HTTP_204_NO_CONTENT
 
@@ -159,7 +159,7 @@ class TestUsers(APITestCase):
         )
         assert res.status_code == status.HTTP_200_OK
 
-        url = reverse("users:user-change-password", args=(1,))
+        url = reverse("users:user-change-password", args=(self.user.pk,))
         new_pw = "somethignNewidkdkdkjd"
         change = {
             "old_password": self.user_pw,
@@ -183,7 +183,7 @@ class TestUsers(APITestCase):
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
         # check that old password must match actual
-        user = get_user_model().objects.get(pk=1)
+        user = get_user_model().objects.filter(email=self.user.email).first()
         self.client.force_authenticate(user=user)
         change = {
             "old_password": new_pw,

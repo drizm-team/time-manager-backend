@@ -1,4 +1,5 @@
 from rest_framework.exceptions import APIException
+from rest_framework import status
 
 
 class ValidationError(APIException):
@@ -33,7 +34,14 @@ class PasswordMismatchException(APIException):
     status_code = 400
 
 
+class NotAuthenticatedException(APIException):
+    default_code = "not_authenticated"
+    default_detail = "Authentication credentials were not provided"
+    status_code = status.HTTP_401_UNAUTHORIZED
+
+
 __all__ = [
     "ValidationError", "EmailInUse",
-    "NotFoundException", "PasswordMismatchException"
+    "NotFoundException", "PasswordMismatchException",
+    "NotAuthenticatedException"
 ]

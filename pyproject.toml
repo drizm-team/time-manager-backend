@@ -14,7 +14,7 @@ django-debug-toolbar = "^2.2"
 djangorestframework-simplejwt = "^4.4.0"
 django-cors-headers = "^3.5.0"
 drizm-django-commons = "^0.2.1"
-drizm-commons = "^0.3.3"
+drizm-commons = {extras = ["google"], version = "^0.4.0"}
 psycopg2-binary = "^2.8.6"
 django-storages = {extras = ["google"], version = "^1.10.1"}
 google-cloud-logging = "1.15.1"
