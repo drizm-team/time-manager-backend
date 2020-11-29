@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     # User defined apps
     'TimeManagerBackend.apps.errors',
     'TimeManagerBackend.apps.users',
-    'TimeManagerBackend.apps.notes'
+    'TimeManagerBackend.apps.notes',
+    'TimeManagerBackend.apps.events',
 ]
 
 CLOUD_SQL_CONN_NAME = f"{terraform.vars.project_name}:" \
