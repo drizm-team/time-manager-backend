@@ -42,6 +42,13 @@ urlpatterns = [
             'TimeManagerBackend.apps.notes.urls',
             namespace='notes'
         )
+    ),
+    path(
+        'events/',
+        include(
+            'TimeManagerBackend.apps.events.urls',
+            namespace='events'
+        )
     )
 ]
 
