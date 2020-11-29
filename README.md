@@ -32,24 +32,43 @@ through the exodia service account.
 - Docker Desktop installed
 - Access to GCP Console
 
+**The following locations contain keys:**
+- ./keys/
+- ./TimeManagerBackend/settings/keys.py
+- ./.terraform/terraform.tfvars
+
+#### keys folder Contents
+
+The "keys" directory contains the .json
+keys for Google Cloud Platform service
+accounts.  
+By default this project will expect a user
+called **exodia_cron**.  
+This user is required but you can add more
+if wanted.  
+
+All users added to this folder will
+qualify to request to management
+endpoints once the Migrations have run!  
+
+See the respective project for a key.
+
 #### keys.py Contents
 
 SECRET_KEY = str  
 PROM_USER = str(email)  
 PROM_PASSWORD = str  
 
-For local development, the following steps
-need to be taken:
-- Add keys folder at project root
-- Add exodia.json to afor mentioned folder,
-containing the service-account key for the
-super-admin of the project (exodia_cron)
-- Add TimeManagerBackend/settings/keys.py
-file, above listed contents
-- In the .terraform directory, add a new
-file called terraform.tfvars, containing
-values for all the variables in the
-variables.tf file.
+#### terraform.tfvars Contents
+
+For the contents here, see the
+variables.tf file.  
+All variables listed in that file need to
+be present here.
+
+Example Syntax:
+key = "string-value"
+key2 = "another-string-value"
 
 Once everything is done, simply run:  
 ``cd docker``  
