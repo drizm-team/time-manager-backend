@@ -11,6 +11,7 @@ rm -rf ./test.log
 
 ~/cloud_sql_proxy -instances="$conn_string"=tcp:5432 &
 pid=$!
+sleep 5
 
 poetry run python manage.py migrate --no-input
 poetry run python manage.py collectstatic --no-input
