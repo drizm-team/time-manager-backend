@@ -18,9 +18,6 @@ class NotesSerializer(HrefModelSerializer):
                 "default": serializers.CurrentUserDefault(),
                 "write_only": True
             },
-            "self": {
-                "view_name": "notes:note-detail"
-            },
             "content": {
                 "required": False,
                 "allow_blank": True
