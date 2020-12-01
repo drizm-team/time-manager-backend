@@ -273,11 +273,12 @@ description = "Django commons for the Drizm organization"
 name = "drizm-django-commons"
 optional = false
 python-versions = ">=3.8,<4.0"
-version = "0.2.2"
+version = "0.3.0"
 
 [package.dependencies]
 django = "3.1.1"
 djangorestframework = "3.12.1"
+drf-yasg = ">=1.20.0,<2.0.0"
 
 [[package]]
 category = "main"
@@ -478,7 +479,7 @@ description = "Core utilities for Python packages"
 name = "packaging"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-version = "20.5"
+version = "20.7"
 
 [package.dependencies]
 pyparsing = ">=2.0.2"
@@ -574,6 +575,17 @@ name = "pyparsing"
 optional = false
 python-versions = ">=2.6, !=3.0.*, !=3.1.*, !=3.2.*"
 version = "2.4.7"
+
+[[package]]
+category = "main"
+description = "Extensions to the standard Python datetime module"
+name = "python-dateutil"
+optional = false
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,>=2.7"
+version = "2.8.1"
+
+[package.dependencies]
+six = ">=1.5"
 
 [[package]]
 category = "main"
@@ -701,7 +713,7 @@ secure = ["pyOpenSSL (>=0.14)", "cryptography (>=1.3.4)", "idna (>=2.0.0)", "cer
 socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 
 [metadata]
-content-hash = "190e9d357ad2bf4d23c1ada9133b2d7630a8fc27a7708e86e0dbf06320840499"
+content-hash = "172b29eb77cdf0bdeb574fae2ea7daf07adfcd9626f7ceacb951bea3075ebed6"
 python-versions = "^3.8, <3.9"
 
 [metadata.files]
@@ -817,8 +829,8 @@ drizm-commons = [
     {file = "drizm_commons-0.4.0-py3-none-any.whl", hash = "sha256:fba3fabe898684d326a3109d88d34f2e49f8945bd49fc162c6733e8f4b202374"},
 ]
 drizm-django-commons = [
-    {file = "drizm-django-commons-0.2.2.tar.gz", hash = "sha256:0da215e36aa5e89f9c7e2da7e1cbe6b4e48760a12610b9a3348ffff15ff30e12"},
-    {file = "drizm_django_commons-0.2.2-py3-none-any.whl", hash = "sha256:5e57d1f0a169731a3e5899b150cb203cea79bef25f39c996b913c8738cca3241"},
+    {file = "drizm-django-commons-0.3.0.tar.gz", hash = "sha256:3cea96e2435839ed507a51428a6bf03060e75f934e85c3c092f63300b28585d3"},
+    {file = "drizm_django_commons-0.3.0-py3-none-any.whl", hash = "sha256:59d258b5d15a79742773f783ec79612ac296f4d099adbf4ea96441309e910c46"},
 ]
 google-api-core = [
     {file = "google-api-core-1.23.0.tar.gz", hash = "sha256:1bb3c485c38eacded8d685b1759968f6cf47dd9432922d34edb90359eaa391e2"},
@@ -924,8 +936,8 @@ markupsafe = [
     {file = "MarkupSafe-1.1.1.tar.gz", hash = "sha256:29872e92839765e546828bb7754a68c418d927cd064fd4708fab9fe9c8bb116b"},
 ]
 packaging = [
-    {file = "packaging-20.5-py2.py3-none-any.whl", hash = "sha256:1a67848015ca7e7879eee30a7ae1053bc04d031e31eccbde6082820150f08621"},
-    {file = "packaging-20.5.tar.gz", hash = "sha256:5d21ed3d936beb102850195eadaa1371bfb4b93da6ad63d231410c6dca25a665"},
+    {file = "packaging-20.7-py2.py3-none-any.whl", hash = "sha256:eb41423378682dadb7166144a4926e443093863024de508ca5c9737d6bc08376"},
+    {file = "packaging-20.7.tar.gz", hash = "sha256:05af3bb85d320377db281cf254ab050e1a7ebcbf5410685a9a407e18a1f81236"},
 ]
 pathspec = [
     {file = "pathspec-0.8.1-py2.py3-none-any.whl", hash = "sha256:aa0cb481c4041bf52ffa7b0d8fa6cd3e88a2ca4879c533c9153882ee2556790d"},
@@ -1058,6 +1070,10 @@ pyjwt = [
 pyparsing = [
     {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
     {file = "pyparsing-2.4.7.tar.gz", hash = "sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1"},
+]
+python-dateutil = [
+    {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},
+    {file = "python_dateutil-2.8.1-py2.py3-none-any.whl", hash = "sha256:75bb3f31ea686f1197762692a9ee6a7550b59fc6ca3a1f4b5d7e32fb98e2da2a"},
 ]
 pytz = [
     {file = "pytz-2020.4-py2.py3-none-any.whl", hash = "sha256:5c55e189b682d420be27c6995ba6edce0c0a77dd67bfbe2ae6607134d5851ffd"},
