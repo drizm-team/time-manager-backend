@@ -1,3 +1,5 @@
+from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 from rest_framework import viewsets
 from rest_framework.request import Request
 from django.db.models import Q
@@ -22,19 +24,34 @@ class EventsViewSet(viewsets.ModelViewSet):
         query_serializer=serializers.EventsListQueryParamsSerializer()
     )
     def list(self, request: Request, *args, **kwargs):
+        # Extract and validate the query args
         year = request.query_params.get("year")
         month = request.query_params.get("month")
+        tz = request.query_params.get("tz")
         query_serializer = serializers.EventsListQueryParamsSerializer(
-            data={"month": month, "year": year}
+            data={"month": month, "year": year, "tz": tz}
         )
         query_serializer.is_valid(raise_exception=True)
 
+        # Month counts up from 0 so we have to add 1 to it
+        month = query_serializer.validated_data.get("month") + 1
+        year = query_serializer.validated_data.get("year")
+        tz = query_serializer.validated_data.get("tz")
+        start_date = timezone.datetime(
+            day=1, month=month, year=year
+        )
+        start_date += timezone.timedelta(minutes=tz)
+        end_date = start_date + relativedelta(months=1)
+
         queryset = self.get_queryset()
         events = queryset.filter(
-            Q(start__month__lte=month) &
-            Q(end__month__gte=month) &
-            Q(start__year__lte=year) &
-            Q(end__year__gte=year)
+            Q(
+                end__isnull=True,
+                start__range=(start_date, end_date)
+            ) | Q(
+                Q(start__range=(start_date, end_date)) |
+                Q(end__range=(start_date, end_date))
+            )
         ).all()
         serializer = self.get_serializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
