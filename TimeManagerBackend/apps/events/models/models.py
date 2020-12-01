@@ -12,7 +12,7 @@ class Event(models.Model):
     secondary_color = models.IntegerField()
 
     start = models.DateTimeField()
-    end = models.DateTimeField()
+    end = models.DateTimeField(null=True)
     all_day = models.BooleanField(default=False)
 
 
