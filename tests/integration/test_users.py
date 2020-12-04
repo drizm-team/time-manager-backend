@@ -113,6 +113,10 @@ class TestUsers(APITestCase):
         res = self.client.patch(url, {"email": "sth@tester.de"})
         assert res.status_code == status.HTTP_400_BAD_REQUEST
 
+        # fail if updating password
+        res = self.client.patch(url, {"password": "olol250NewPw"})
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+
         # 404 for nonexistent user
         url = reverse(self.detail, args=(5,))
         res = self.client.patch(url, {"email": "sth@tester.de"})

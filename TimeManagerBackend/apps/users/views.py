@@ -192,6 +192,11 @@ class UserViewSet(viewsets.GenericViewSet,
         }
     )
     def update(self, request, *args, **kwargs):
+        if "password" in request.data:
+            return Response(
+                "Password can only be changed from the change_password endpoint.",
+                status=status.HTTP_400_BAD_REQUEST
+            )
         instance = self.get_object()
         serializer = self.get_serializer(
             instance,
