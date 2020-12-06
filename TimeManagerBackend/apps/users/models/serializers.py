@@ -19,7 +19,7 @@ class UserSerializer(serializers.Serializer):
     )
     password = serializers.CharField(
         min_length=8,
-        max_length=50,
+        max_length=128,
         write_only=True,
         required=True
     )
