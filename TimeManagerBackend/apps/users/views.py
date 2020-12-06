@@ -1,7 +1,6 @@
 import logging
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -20,7 +19,6 @@ from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from TimeManagerBackend.lib.errors.exc import PasswordMismatchException
 from TimeManagerBackend.lib.gcp_auth import (
     IsServiceAccount,
     ServiceAccountIDTokenAuthStrictWhenLive
@@ -146,6 +144,16 @@ class UserViewSet(PatchUpdateModelViewSet):
 
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
+    @swagger_auto_schema(
+        method="patch",
+        operation_summary="Change Email",
+        request_body=EmailChangeSerializer,
+        responses={
+            status.HTTP_200_OK: UserSerializer(),
+            status.HTTP_403_FORBIDDEN: "Not allowed to perform this operation"
+                                       "on the requested user"
+        }
+    )
     @action(
         methods=["PATCH"],
         url_path="change-email",
