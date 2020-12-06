@@ -2,7 +2,7 @@
 name = "TimeManagerBackend"
 version = "0.1.0"
 description = ""
-authors = ["ThaRising <mail@domain.com>"]
+authors = ["ThaRising <kochbe.ber@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8, <3.9"

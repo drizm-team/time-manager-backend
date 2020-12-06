@@ -1,13 +1,11 @@
 import logging
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.hashers import check_password
 from django.core.management import call_command
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import permissions, status
-from rest_framework import viewsets, mixins
 from rest_framework.decorators import (
     action,
     api_view,
@@ -20,107 +18,24 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView as __TokenObtainPairView,
-    TokenRefreshView as __TokenRefreshView,
-    TokenVerifyView as __TokenVerifyView,
-)
 
 from TimeManagerBackend.lib.gcp_auth import (
     IsServiceAccount,
     ServiceAccountIDTokenAuthStrictWhenLive
 )
+from TimeManagerBackend.lib.viewsets import PatchUpdateModelViewSet
 from .models import serializers
 from .models.serializers import (
-    CustomTokenObtainPairSerializer,
-    ObtainSchema,
-    RefreshSchema,
-    UserResponseSchema,
-    PasswordChangeSerializer,
     UserSerializer,
-    TokenDestroySchema
+    PasswordChangeSerializer,
+    EmailChangeSerializer
 )
-from ..errors.errors import PasswordMismatchException
-
-
-@method_decorator(
-    name="post", decorator=swagger_auto_schema(
-        operation_summary="Create Token",
-        operation_description="Takes a set of user credentials "
-                              "and returns an access and refresh JSON web"
-                              "token pair to prove the authentication of "
-                              "those credentials.",
-        security=[],
-        responses={
-            status.HTTP_200_OK: ObtainSchema(),
-            status.HTTP_401_UNAUTHORIZED: "Invalid Credentials"
-        }
-    )
-)
-class TokenObtainPairView(__TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
-
-
-@method_decorator(
-    name="post", decorator=swagger_auto_schema(
-        operation_summary="Request new Token",
-        operation_description="Takes a refresh type JSON web token "
-                              "and returns an access type JSON web token "
-                              "if the refresh token is valid.",
-        security=[],
-        responses={
-            status.HTTP_200_OK: RefreshSchema(),
-            status.HTTP_401_UNAUTHORIZED: "Refresh token invalid"
-        }
-    )
-)
-class TokenRefreshView(__TokenRefreshView):
-    pass
-
-
-@method_decorator(
-    name="post", decorator=swagger_auto_schema(
-        operation_summary="Verify Token",
-        operation_description="Takes a token and indicates if it is valid."
-                              " This view provides no information "
-                              "about a token's fitness for a particular use.",
-        security=[],
-        responses={
-            status.HTTP_200_OK: "Access token valid",
-            status.HTTP_401_UNAUTHORIZED: "Access token invalid"
-        }
-    )
-)
-class TokenVerifyView(__TokenVerifyView):
-    pass
 
 
 @swagger_auto_schema(
     method="post",
-    operation_summary="Delete Token",
-    operation_description="Destroys or deletes a token. "
-                          "May be used to facilitate logout behaviour.",
-    request_body=TokenDestroySchema,
-    responses={
-        status.HTTP_205_RESET_CONTENT: "Operation Successful",
-        status.HTTP_401_UNAUTHORIZED: "Refresh token invalid"
-    },
-    security=[]
+    auto_schema=None  # noqa expected type
 )
-@api_view(["POST"])
-@permission_classes([permissions.AllowAny])
-def token_destroy_view(request, *args, **kwargs):
-    serializer = TokenDestroySchema(data=request.data)
-    serializer.is_valid(raise_exception=True)
-    try:
-        token = RefreshToken(serializer.validated_data.get("refresh"))
-        token.blacklist()
-    except TokenError as e:
-        raise InvalidToken(e.args[0])
-    return Response(status=status.HTTP_205_RESET_CONTENT)
-
-
-@swagger_auto_schema(method="post", auto_schema=None)
 @api_view(["POST"])
 @authentication_classes([ServiceAccountIDTokenAuthStrictWhenLive])
 @permission_classes([IsServiceAccount])
@@ -138,27 +53,16 @@ def __manage_flush_expired__(request: Request, *args, **kwargs) -> Response:
     name="create", decorator=swagger_auto_schema(
         operation_summary="Create User",
         security=[],
-        responses={
-            status.HTTP_200_OK: UserResponseSchema(),
-            status.HTTP_400_BAD_REQUEST: "Validation failed"
-        }
     )
 )
 @method_decorator(
     name="retrieve", decorator=swagger_auto_schema(
         operation_summary="Retrieve singular User",
-        responses={
-            status.HTTP_200_OK: UserResponseSchema(),
-            status.HTTP_404_NOT_FOUND: "Specified ID does not match a user"
-        }
     )
 )
 @method_decorator(
     name="list", decorator=swagger_auto_schema(
         operation_summary="List all visible Users",
-        responses={
-            status.HTTP_200_OK: UserResponseSchema(many=True)
-        }
     )
 )
 @method_decorator(
@@ -166,11 +70,7 @@ def __manage_flush_expired__(request: Request, *args, **kwargs) -> Response:
         operation_summary="Delete User",
     )
 )
-class UserViewSet(viewsets.GenericViewSet,
-                  mixins.CreateModelMixin,
-                  mixins.ListModelMixin,
-                  mixins.RetrieveModelMixin,
-                  mixins.DestroyModelMixin):
+class UserViewSet(PatchUpdateModelViewSet):
     serializer_class = serializers.UserSerializer
 
     def get_queryset(self):
@@ -184,37 +84,23 @@ class UserViewSet(viewsets.GenericViewSet,
             permission_classes_ = [permissions.IsAuthenticated]
         return [permission() for permission in permission_classes_]
 
-    @swagger_auto_schema(
-        operation_summary="Update User",
-        responses={
-            status.HTTP_200_OK: UserResponseSchema(),
-            status.HTTP_400_BAD_REQUEST: "Validation failed"
-        }
-    )
-    def update(self, request, *args, **kwargs):
+    def partial_update(self, request, *args, **kwargs):
         if "password" in request.data:
             return Response(
                 "Password can only be changed from the change_password endpoint.",
                 status=status.HTTP_400_BAD_REQUEST
             )
-        instance = self.get_object()
-        serializer = self.get_serializer(
-            instance,
-            data=request.data,
-            partial=True
-        )
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+        if "email" in request.data:
+            return Response(
+                "Email can only be changed from the change_email endpoint.",
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
-        return Response(serializer.data)
+        return super().partial_update(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        method="post",
+        method="patch",
         operation_summary="Change Password",
         request_body=PasswordChangeSerializer,
         responses={
@@ -223,7 +109,11 @@ class UserViewSet(viewsets.GenericViewSet,
                                        "on the requested user"
         }
     )
-    @action(methods=["post"], url_path="change-password", detail=True)
+    @action(
+        methods=["PATCH"],
+        url_path="change-password",
+        detail=True
+    )
     def change_password(self, request, *args, **kwargs):
         requested_user = get_object_or_404(
             self.get_queryset(), pk=kwargs.get("pk")
@@ -234,51 +124,62 @@ class UserViewSet(viewsets.GenericViewSet,
 
         # make sure that the request payload is valid
         serializer = PasswordChangeSerializer(
+            requested_user,
             data=request.data,
             context=self.get_serializer_context()
         )
         serializer.is_valid(raise_exception=True)
-
-        # check that the old_password is identical to the stored one
-        if not check_password(
-                serializer.validated_data.get("old_password"),
-                requesting_user.password
-        ):
-            raise PasswordMismatchException
-
-        # change the password
-        user_serializer = UserSerializer(
-            requesting_user,
-            data={
-                "password": serializer.validated_data.get("new_password")
-            },
-            partial=True
-        )
-        user_serializer.is_valid(raise_exception=True)
-        user_serializer.save()
+        serializer.save()
 
         # find all refresh tokens of the user and blacklist them
         try:
             tokens = OutstandingToken.objects.filter(
-                user=requesting_user, blacklistedtoken__isnull=True
+                user=requested_user, blacklistedtoken__isnull=True
             )
             for token in tokens:
                 token = RefreshToken(token.token)
                 token.blacklist()
         except TokenError as e:
             raise InvalidToken(e.args[0])
+
         return Response(status=status.HTTP_205_RESET_CONTENT)
 
+    @swagger_auto_schema(
+        method="patch",
+        operation_summary="Change Email",
+        request_body=EmailChangeSerializer,
+        responses={
+            status.HTTP_200_OK: UserSerializer(),
+            status.HTTP_403_FORBIDDEN: "Not allowed to perform this operation"
+                                       "on the requested user"
+        }
+    )
+    @action(
+        methods=["PATCH"],
+        url_path="change-email",
+        detail=True
+    )
+    def change_email(self, request, *args, **kwargs):
+        requested_user = get_object_or_404(
+            self.get_queryset(), pk=kwargs.get("pk")
+        )
+        requesting_user = request.user
+        if not requested_user == requesting_user:
+            raise PermissionDenied
 
-user_viewset_list = UserViewSet.as_view({
-    "get": "list",
-    "post": "create"
-})
-user_viewset_detail = UserViewSet.as_view({
-    "get": "retrieve",
-    "patch": "update",
-    "delete": "destroy"
-})
-user_viewset_change_password = UserViewSet.as_view({
-    "post": "change_password"
-})
+        serializer = EmailChangeSerializer(
+            requested_user,
+            data=request.data,
+            context=self.get_serializer_context()
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        user_serializer = UserSerializer(
+            requested_user,
+            context=self.get_serializer_context()
+        )
+        return Response(
+            user_serializer.data,
+            status=status.HTTP_200_OK
+        )

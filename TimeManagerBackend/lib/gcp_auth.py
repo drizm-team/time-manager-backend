@@ -12,7 +12,7 @@ from rest_framework.authentication import (
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 
-from TimeManagerBackend.apps.errors.errors import NotAuthenticatedException
+from .errors.exc import NotAuthenticatedException
 
 
 class _ServiceAccountIDTokenAuth(BaseAuthentication):

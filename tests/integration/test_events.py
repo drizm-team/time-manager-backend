@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from typing import Optional
 
 from django.http import QueryDict
 from django.utils import timezone
@@ -7,19 +8,22 @@ from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
-from ..conftest import create_test_user
+from ..conftest import create_test_user, TEST_USER_PASSWORD
 
 
 class TestEvents(APITestCase):
     def setUp(self) -> None:
-        self.user, self.email, self.password = create_test_user()
+        self.user_pw = TEST_USER_PASSWORD
+        self.user = create_test_user()
 
-        self.base = "events:event-%s"
-        self.list = self.base % "list"
-        self.detail = self.base % "detail"
+        app_base = "events:event-%s"
+        self.list = app_base % "list"
+        self.detail = app_base % "detail"
 
     def _sample_create(self, content=None):
+        """ Generate a generic test event """
         url = reverse(self.list)
+
         current_time = datetime.now()
         example_content = content or {
             "title": "Some title",
@@ -29,17 +33,47 @@ class TestEvents(APITestCase):
             "end": (current_time + timedelta(hours=5)).isoformat()
         }
         self.client.force_authenticate(user=self.user)
-        self.client.post(url, example_content)
+        res = self.client.post(url, example_content)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
         self.client.force_authenticate(user=None)
 
-    def _generate_filter_url(self, query_params):
+        return res.json()
+
+    def _generate_filter_url(self,
+                             year: int,
+                             month: int,
+                             tz: Optional[int] = None) -> str:
+        """ Generate a URL for the list endpoint, that includes query params """
+        query_params = QueryDict("", mutable=True)
+        query_params["year"] = year
+        query_params["month"] = month
+        query_params["tz"] = tz or 0
+
         return "{base_url}?{query_params}".format(
             base_url=reverse(self.list),
             query_params=query_params.urlencode(),
         )
 
+    def _test_response_body(self, body: dict):
+        assert all_keys_present(
+            body,
+            (
+                "title", "primary_color", "secondary_color",
+                "start", "end", "allDay", "self"
+            )
+        )
+        # Make sure these two attributes really do not get output
+        assert not all_keys_present(body, ("creator", "id"))
+
     def test010_create(self):
+        """
+        GIVEN I have a user account
+            AND I am logged in
+        WHEN I ask to create a new event
+        THEN I should be able to create a new event
+        """
         url = reverse(self.list)
+
         current_time = datetime.now()
         example_content = {
             "title": "Some title",
@@ -53,19 +87,12 @@ class TestEvents(APITestCase):
         res = self.client.post(url, example_content)
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
-        # Make sure it works under normal conditions
+        # Create a new note while logged in, this should work
         self.client.force_authenticate(user=self.user)
         res = self.client.post(url, example_content)
         assert res.status_code == status.HTTP_201_CREATED
         content = res.json()
-        assert all_keys_present(
-            content,
-            (
-                "title", "primary_color", "secondary_color",
-                "start", "end", "allDay", "self"
-            )
-        )
-        assert not all_keys_present(content, ("creator", "id"))
+        self._test_response_body(content)
 
         # Does our aliasing of all_day to allDay work on write as well?
         example_content["allDay"] = True
@@ -80,8 +107,17 @@ class TestEvents(APITestCase):
         res = self.client.post(url, example_content)
         assert res.status_code == status.HTTP_400_BAD_REQUEST
 
-    def _test020_list(self):
+    def test020_list(self):
+        """
+        GIVEN I have a user account
+            AND I am logged in
+        WHEN I ask to list all events in a range
+            AND I provide query params to specify the desired range
+        THEN I should be able to see all events that were created by me
+            AND that match the specified range including the timezone I specified
+        """
         url = reverse(self.list)
+
         # Create a test event
         self._sample_create()
 
@@ -96,10 +132,10 @@ class TestEvents(APITestCase):
 
         # We expect to get something back here,
         # because we created it in the current month
-        query_params = QueryDict("", mutable=True)
-        query_params["year"] = datetime.now().year
-        query_params["month"] = datetime.now().month - 1
-        url = self._generate_filter_url(query_params)
+        url = self._generate_filter_url(
+            year=datetime.now().year,
+            month=datetime.now().month - 1
+        )
         res = self.client.get(url)
         assert res.status_code == status.HTTP_200_OK
         content = res.json()
@@ -108,8 +144,10 @@ class TestEvents(APITestCase):
 
         # We create last months data here,
         # so this should not show our event from this month
-        query_params["month"] = datetime.now().month - 2
-        url = self._generate_filter_url(query_params)
+        url = self._generate_filter_url(
+            year=datetime.now().year,
+            month=datetime.now().month - 2
+        )
         res = self.client.get(url)
         assert res.status_code == status.HTTP_200_OK
         content = res.json()
@@ -140,27 +178,31 @@ class TestEvents(APITestCase):
         # Lets say we are in Germany now and want to filter our calendar
         # We expect this to be in Nov, as well as Dec because
         # of the timezone change
-        query_params = QueryDict("", mutable=True)
-        query_params["year"] = start_time.year
-        query_params["month"] = start_time.month - 1
-        query_params["tz"] = -60
-        url = self._generate_filter_url(query_params)
+        url = self._generate_filter_url(
+            year=start_time.year,
+            month=start_time.month - 1,
+            tz=(-60)
+        )
 
         self.client.force_authenticate(user=self.user)
         res = self.client.get(url)
         assert len(res.json()) == 1
 
-        query_params["month"] = start_time.month
-        url = self._generate_filter_url(query_params)
+        url = self._generate_filter_url(
+            year=start_time.year,
+            month=start_time.month,
+            tz=(-60)
+        )
         res = self.client.get(url)
         assert len(res.json()) == 1
 
-        query_params["month"] = start_time.month - 2
-        url = self._generate_filter_url(query_params)
+        url = self._generate_filter_url(
+            year=start_time.year,
+            month=start_time.month - 2,
+            tz=(-60)
+        )
         res = self.client.get(url)
         assert len(res.json()) == 0
-
-        self.client.force_authenticate(user=None)
 
     def test040_list_filtering_2(self):
         start_time = timezone.datetime(
@@ -181,24 +223,28 @@ class TestEvents(APITestCase):
         # Lets say we are in Germany now and want to filter our calendar
         # We expect this to be in Nov, as well as Dec because
         # of the timezone change
-        query_params = QueryDict("", mutable=True)
-        query_params["year"] = start_time.year
-        query_params["month"] = start_time.month - 1
-        query_params["tz"] = -60
-        url = self._generate_filter_url(query_params)
+        url = self._generate_filter_url(
+            year=start_time.year,
+            month=start_time.month - 1,
+            tz=(-60)
+        )
 
         self.client.force_authenticate(user=self.user)
         res = self.client.get(url)
         assert len(res.json()) == 1
 
-        query_params["month"] = start_time.month
-        url = self._generate_filter_url(query_params)
+        url = self._generate_filter_url(
+            year=start_time.year,
+            month=start_time.month,
+            tz=(-60)
+        )
         res = self.client.get(url)
         assert len(res.json()) == 0
 
-        query_params["month"] = start_time.month - 2
-        url = self._generate_filter_url(query_params)
+        url = self._generate_filter_url(
+            year=start_time.year,
+            month=start_time.month - 2,
+            tz=(-60)
+        )
         res = self.client.get(url)
         assert len(res.json()) == 0
-
-        self.client.force_authenticate(user=None)
