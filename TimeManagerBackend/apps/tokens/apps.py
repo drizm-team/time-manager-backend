@@ -2,5 +2,5 @@ from django.apps import AppConfig
 
 
 class CoreConfig(AppConfig):
-    name = 'errors'
-    label = 'errors'
+    name = 'tokens'
+    label = 'tokens'

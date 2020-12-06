@@ -1,32 +1,32 @@
-from django.conf import settings
+from django.contrib import admin
 from django.urls import path, include, re_path
-from django.views.generic.base import RedirectView
-
-from .apps.users.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-    TokenVerifyView,
-    token_destroy_view
-)
 from .docs.openapi import schema_view
+from django.conf import settings
+from django.views.generic.base import RedirectView
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
 
 urlpatterns = [
     # Included URL paths
+    path('admin/', admin.site.urls),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$',
             schema_view.without_ui(cache_timeout=0),
             name='schema-json'),
     re_path(r'^redoc/$',
             schema_view.with_ui('redoc', cache_timeout=0),
             name='schema-redoc'),
-    re_path(r'^api-auth/', include('rest_framework.urls')),
+    # Note that eh browsable API auth is absent,
+    # because it uses SessionAuth, while we use JWT
     re_path(r'^favicon\.ico$', favicon_view),
 
-    path('tokens/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('tokens/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('tokens/verify/', TokenVerifyView.as_view(), name='token_verify'),
-    path('tokens/destroy/', token_destroy_view, name='token_destroy'),
+    # JWT Token-Auth endpoints
+    path(
+        'tokens/',
+        include(
+            'TimeManagerBackend.apps.tokens.urls',
+            namespace="tokens"
+        )
+    ),
 
     # User defined URL paths
     path(
@@ -52,6 +52,7 @@ urlpatterns = [
     )
 ]
 
+# Add the DebugToolbar only in development mode
 if settings.DEBUG:
     import debug_toolbar
 
