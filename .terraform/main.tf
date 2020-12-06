@@ -1,17 +1,15 @@
+terraform {
+  backend "gcs" {
+    bucket      = "time-manager-backend-tf-state"
+    credentials = "../keys/exodia_cron.json"
+  }
+}
+
 provider "google" {
   credentials = file("../keys/exodia_cron.json")
   region      = var.project_region
   zone        = "${var.project_region}-a"
   project     = var.project_name
-}
-
-data "terraform_remote_state" "central_state" {
-  backend = "gcs"
-  config = {
-    bucket      = var.state_bucket_name
-    prefix      = "${var.srv_service_name}_${terraform.workspace}"
-    credentials = file("../keys/exodia_cron.json")
-  }
 }
 
 /*
