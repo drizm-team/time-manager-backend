@@ -1,7 +1,8 @@
 from django.http import Http404
 from django.utils.decorators import method_decorator
-from rest_framework import status
+from rest_framework import status, exceptions
 from rest_framework import viewsets, mixins
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
@@ -54,14 +55,26 @@ class NotesViewSet(mixins.DestroyModelMixin,
                               "for both create and update.",
         responses={
             status.HTTP_200_OK: NotesResponseSchema(),
-            status.HTTP_400_BAD_REQUEST: "Validation failed"
+            status.HTTP_400_BAD_REQUEST: "Validation failed",
+            status.HTTP_403_FORBIDDEN: "Note already exists but this user "
+                                       "does not have permissions to edit it"
         },
         request_body=NotesRequestSchema
     )
     def update(self, request, *args, **kwargs):
+        # Build the dataset required to construct the note
         pk = kwargs.get("pk")
         data = request.data
         data["id"] = pk
+
+        # Attempt to obtain the object but not from a subset
+        # This is to handle the case where a user overwrites
+        # an object created by another user that would not get
+        # handled by this view by default because the queryset is scoped
+        note = Note.objects.filter(pk=pk)
+        if note:
+            if note[0].creator != request.user:
+                raise PermissionDenied
         try:
             o = self.get_object()
             serializer = self.get_serializer(o, data=data, partial=False)
