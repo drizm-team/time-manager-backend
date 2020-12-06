@@ -12,16 +12,6 @@ class ValidationError(APIException):
         self.serializer_errors = kwargs.get("serializer_errors")
 
 
-class EmailInUse(APIException):
-    default_code = "not_unique"
-    default_detail = "Email %s already in use"
-    status_code = status.HTTP_400_BAD_REQUEST
-
-    def __init__(self, *args, **kwargs) -> None:
-        super(EmailInUse, self).__init__(*args)
-        self.email = kwargs.get("email")
-
-
 class NotFoundException(APIException):
     default_code = "not_found"
     default_detail = "Element not found"
@@ -41,7 +31,6 @@ class NotAuthenticatedException(APIException):
 
 
 __all__ = [
-    "ValidationError", "EmailInUse",
-    "NotFoundException", "PasswordMismatchException",
+    "ValidationError", "NotFoundException", "PasswordMismatchException",
     "NotAuthenticatedException"
 ]
