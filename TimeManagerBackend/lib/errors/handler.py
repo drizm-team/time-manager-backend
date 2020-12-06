@@ -3,7 +3,7 @@ from typing import Dict, Any
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, ErrorDetail
 from rest_framework import exceptions
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -29,6 +29,11 @@ def get_detail(exc: APIException) -> str:
         detail = detail[0]
     if type(detail) == dict:
         detail = list(detail.values())[0]
+
+        # Some error messages may be nested one level deeper
+        # unpack those as well
+        if type(detail) == list:
+            detail = detail[0]
 
     # Per convention detail must always end with a '.'
     detail = str(detail)
