@@ -11,6 +11,19 @@ from rest_framework.views import exception_handler
 from .utils import self_test, camel_to_snake
 
 
+# TODO: Implement remote logging for these error cases
+
+
+def get_server_error_response():
+    return Response(
+        {
+            "detail": "An Unknown Error occured.",
+            "code": "unknown_error"
+        },
+        status=500
+    )
+
+
 def get_detail(exc: APIException) -> str:
     try:
         detail = exc.detail
@@ -27,7 +40,7 @@ def get_detail(exc: APIException) -> str:
     # we only send the first one (this could happen with e.g. ValidationError)
     if type(detail) in (list, tuple):
         detail = detail[0]
-    if type(detail) == dict:
+    if type(detail) == dict or issubclass(type(detail), dict):
         detail = list(detail.values())[0]
 
         # Some error messages may be nested one level deeper
@@ -54,8 +67,13 @@ def get_code(exc: APIException) -> str:
             # So we just convert the class name to a lowercase snake_case string
             code = camel_to_snake(exc.__class__.__name__)
 
-    if type(code) == dict:
+    if type(code) == dict or issubclass(type(code), dict):
         code = list(code.values())[0]
+
+        # Some error codes may be nested one level deeper
+        # unpack those as well
+        if type(code) == list:
+            code = code[0]
 
     return str(code)
 
@@ -69,7 +87,7 @@ def get_status(exc: APIException) -> int:
             status = getattr(*params)
         else:
             # Last ditch effort fallback
-            return 400  # BAD_REQUEST
+            return 500  # BAD_REQUEST
 
     return int(status)
 
@@ -93,17 +111,30 @@ def global_default_exception_handler(
         exc = exceptions.PermissionDenied()
 
     try:
+        status = get_status(exc)
+
+        # In case a catastrophic failure occurs,
+        # we cannot risk leaking any info
+        if status == 500:  # SERVER_ERROR
+            return get_server_error_response()
+
         resp = Response(
             {
                 "detail": get_detail(exc),
                 "code": get_code(exc)
             },
-            status=get_status(exc)
+            status=status
         )
     except Exception as exc:  # noqa E722
         # Silence the errors in production but raise them in development
         if not settings.TESTING and not settings.DEBUG:
             resp = exception_handler(exc, context)
+
+            # Again, in case a 500 occurs we should send basically
+            # no data to external sources because it may be sensitive
+            if resp.status_code == 500:  # SERVER_ERROR
+                return get_server_error_response()
+
         else:
             raise exc
     else:  # if no error occurred

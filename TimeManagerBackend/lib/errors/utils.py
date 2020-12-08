@@ -10,7 +10,11 @@ def camel_to_snake(name: str):
 
 
 def self_test(error_response: Response) -> None:
-    """ Makes sure that the generated error response is valid """
+    """
+    Checks the structure of exceptions,
+    to ensure that certain formatting rules
+    are always respected.
+    """
     content = error_response.data
     detail: Union[str, list] = content.get("detail")
     code: str = content.get("code")
@@ -24,11 +28,22 @@ def self_test(error_response: Response) -> None:
             f"Expected keys '{keys_expect}', got '{keys_actual}'."
         )
 
+    # Matches all special characters except _ and .
+    pattern = re.compile(r"(?=\W)(?=[^_.])")
+
     for v in ("detail", "code"):
         value = content.get(v)
         if (t := type(value)) != str:
             raise TypeError(
                 f"'{v}' type must be 'string', got '{t}'."
+            )
+
+        # Make sure that the exceptions have proper formatting
+        if r := re.match(pattern, value):
+            raise ValueError(
+                f"'{v}' cannot contain any special characters, "
+                f"except for '.' and '_'. Detected forbidden character "
+                f"'{r[0]}' in '{value}'."
             )
 
     if not detail.endswith("."):
