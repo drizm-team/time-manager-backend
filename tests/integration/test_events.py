@@ -248,3 +248,80 @@ class TestEvents(APITestCase):
         )
         res = self.client.get(url)
         assert len(res.json()) == 0
+
+    def test050_list_filtering_3(self):
+        # Test with the end time being 00:00, at the end of a month
+        # This should still be returned for next month
+        start_time = timezone.datetime(
+            year=2020, month=11, day=30,
+            hour=23, minute=0, second=0
+        )
+        end_time = start_time + timezone.timedelta(hours=1)
+
+        self._sample_create(
+            {
+                "title": "Some title 2",
+                "primary_color": "#ffffff",
+                "secondary_color": "#ababab",
+                "start": start_time.isoformat(),
+                "end": end_time.isoformat()
+            }
+        )
+
+        # This is for the month we created in
+        self.client.force_authenticate(user=self.user)
+        url = self._generate_filter_url(
+            year=start_time.year,
+            month=start_time.month - 1,
+        )
+        res = self.client.get(url)
+        assert len(res.json()) == 1
+
+        # This is for the month after that
+        url = self._generate_filter_url(
+            year=start_time.year,
+            month=start_time.month,
+        )
+        res = self.client.get(url)
+        assert len(res.json()) == 1
+
+    def test060_list_filtering_4(self):
+        # Test the previous scenario but with differing years
+        # This should still be returned for next month
+        start_time = timezone.datetime(
+            year=2020, month=12, day=31,
+            hour=22, minute=12, second=0
+        )
+        end_time = timezone.datetime(
+            year=2020, month=12, day=31,
+            hour=23, minute=0, second=0
+        )
+
+        self._sample_create(
+            {
+                "title": "Some title 15",
+                "primary_color": "#ffffff",
+                "secondary_color": "#ababab",
+                "start": start_time.isoformat(),
+                "end": end_time.isoformat()
+            }
+        )
+
+        # This is for the month we created in
+        self.client.force_authenticate(user=self.user)
+        url = self._generate_filter_url(
+            year=2020,
+            month=11,
+            tz=60
+        )
+        res = self.client.get(url)
+        assert len(res.json()) == 1
+
+        # This is for the month after that
+        url = self._generate_filter_url(
+            year=2021,
+            month=0,
+            tz=60
+        )
+        res = self.client.get(url)
+        assert len(res.json()) == 1
