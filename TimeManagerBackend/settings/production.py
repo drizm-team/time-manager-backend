@@ -202,7 +202,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 """ Load in the Deployment Settings """
 # if we are running on CloudRun, configure stackdriver logging
-if os.getenv("K_SERVICE"):
+if os.getenv("GAE_APPLICATION"):
     from google.cloud import logging
 
     client = logging.Client().from_service_account_json(GS_CREDENTIALS_FILE)
