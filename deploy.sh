@@ -2,6 +2,21 @@
 export DJANGO_SETTINGS_MODULE=TimeManagerBackend.settings.production
 export MIGRATION_MODE=1
 
+if [ "$1" = "--initial" ]; then
+  tfenv use
+  (
+  cd ./.terraform || exit
+  terraform init
+  terraform fmt
+  terraform plan -out="./terraform.plan"
+  echo "In case anything about the plan is wrong, you can quit now."
+  echo "To quit, press Enter, type anything to proceed."
+  read -r escape
+  if [ -z "$escape" ]; then exit 0; fi
+  terraform apply "./terraform.plan"
+  )
+fi
+
 printf "Attempting Migrations and Staticfile collection...\n"
 
 command="poetry run python <<< 'from django.conf import settings; print(settings.CLOUD_SQL_CONN_NAME)'"
@@ -19,20 +34,7 @@ poetry run python manage.py collectstatic --no-input
 
 kill $pid
 
-if [ "$1" = "--initial" ]; then
-  tfenv use
-  # shellcheck disable=SC2164
-  cd ./.terraform
-  terraform init
-  terraform fmt
-  terraform plan -out="./terraform.plan"
-  echo "In case anything about the plan is wrong, you can quit now."
-  echo "To quit, press Enter, type anything to proceed."
-  read -r escape
-  if [ -z "$escape" ]; then exit 0; fi
-  terraform apply "./terraform.plan"
-fi
-
+make requirements
 gcloud app deploy
 
 exit 0
