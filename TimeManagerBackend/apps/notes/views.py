@@ -45,6 +45,10 @@ class NotesViewSet(mixins.DestroyModelMixin,
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # queryset just for schema generation metadata
+            return Note.objects.none()
+
         return Note.objects.filter(creator=self.request.user)
 
     @swagger_auto_schema(

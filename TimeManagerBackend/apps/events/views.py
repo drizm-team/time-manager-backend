@@ -15,6 +15,10 @@ class EventsViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.EventsSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # queryset just for schema generation metadata
+            return Event.objects.none()
+
         return Event.objects.filter(
             creator=self.request.user
         )
