@@ -204,6 +204,14 @@ AUTH_PASSWORD_VALIDATORS = [
 # if we are running on CloudRun, configure stackdriver logging
 if os.getenv("GAE_APPLICATION"):
     from google.cloud import logging
+    from google.cloud.logging.resource import Resource
+
+    resource_type = 'gae_app'
+    resource_labels = {
+        'project_id': os.getenv("GOOGLE_CLOUD_PROJECT"),
+        'service_id': os.getenv("GAE_DEPLOYMENT_ID"),
+        'version_id': os.getenv("GAE_VERSION")
+    }
 
     client = logging.Client().from_service_account_json(GS_CREDENTIALS_FILE)
     # Connects the logger to the root logging handler; by default
@@ -214,18 +222,24 @@ if os.getenv("GAE_APPLICATION"):
         'handlers': {
             'stackdriver': {
                 'class': 'google.cloud.logging.handlers.CloudLoggingHandler',
-                'client': client
+                'client': client,
+                'resource': Resource(resource_type, resource_labels),
             }
         },
         'loggers': {
             'cloud': {
                 'handlers': ['stackdriver'],
                 'level': 'INFO',
-                'name': "cloud"
+                'name': 'cloud'
+            },
+            'django': {
+                'handlers': ['stackdriver'],
+                'level': 'DEBUG',
+                'propagate': True
             },
             'django.request': {
                 'handlers': ['stackdriver'],
-                'level': 'WARN',
+                'level': 'DEBUG',
             },
         }
     }
