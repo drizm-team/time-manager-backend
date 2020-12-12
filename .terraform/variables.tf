@@ -46,18 +46,8 @@ variable "state_bucket_name" {
   description = "Name of the bucket that holds the remote state of Terraform"
 }
 
-// CloudRun config
-variable "srv_service_name" {
-  type        = string
-  description = "Name of the CloudRun service that this project is going to be deployed as"
-}
-
+// Service config
 variable "srv_deploy_domain" {
   type        = string
   description = "Domain that the CloudRun service is going to be deployed on"
-}
-
-variable "srv_image_name" {
-  type        = string
-  description = "FQDN of the image that will be used to generate the CloudRun service instances"
 }
