@@ -1,3 +1,4 @@
+import pytz
 from dateutil.relativedelta import relativedelta
 from django.db.models import Q
 from django.utils import timezone
@@ -42,8 +43,10 @@ class EventsViewSet(viewsets.ModelViewSet):
         year = query_serializer.validated_data.get("year")
         tz = query_serializer.validated_data.get("tz")
 
+        # The 'tzinfo', is to silence the warning
+        # about non-aware datetime objects, that Django throws by default
         start_date = timezone.datetime(
-            day=1, month=month, year=year
+            day=1, month=month, year=year, tzinfo=pytz.UTC
         )
         end_date = start_date + relativedelta(months=1)
 
