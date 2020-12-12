@@ -229,17 +229,17 @@ if os.getenv("GAE_APPLICATION"):
         'loggers': {
             'cloud': {
                 'handlers': ['stackdriver'],
-                'level': 'INFO',
+                'level': 'DEBUG',
                 'name': 'cloud'
             },
             'django': {
                 'handlers': ['stackdriver'],
-                'level': 'DEBUG',
+                'level': 'WARNING',
                 'propagate': True
             },
             'django.request': {
                 'handlers': ['stackdriver'],
-                'level': 'DEBUG',
+                'level': 'WARNING',
             },
         }
     }
