@@ -10,6 +10,15 @@ from rest_framework.test import APITestCase
 
 from ..conftest import create_test_user, TEST_USER_PASSWORD
 
+BASE_TIME = datetime.now()
+EXAMPLE_CONTENT = {
+            "title": "Some title",
+            "primary_color": "#ffffff",
+            "secondary_color": "#ababab",
+            "start": BASE_TIME.isoformat(),
+            "end": (BASE_TIME + timedelta(hours=5)).isoformat()
+        }
+
 
 class TestEvents(APITestCase):
     def setUp(self) -> None:
@@ -25,13 +34,7 @@ class TestEvents(APITestCase):
         url = reverse(self.list)
 
         current_time = datetime.now()
-        example_content = content or {
-            "title": "Some title",
-            "primary_color": "#ffffff",
-            "secondary_color": "#ababab",
-            "start": current_time.isoformat(),
-            "end": (current_time + timedelta(hours=5)).isoformat()
-        }
+        example_content = content or EXAMPLE_CONTENT
         self.client.force_authenticate(user=self.user)
         res = self.client.post(url, example_content)
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
@@ -54,6 +57,7 @@ class TestEvents(APITestCase):
             query_params=query_params.urlencode(),
         )
 
+    # noinspection PyMethodMayBeStatic
     def _test_response_body(self, body: dict):
         assert all_keys_present(
             body,
@@ -70,41 +74,41 @@ class TestEvents(APITestCase):
         GIVEN I have a user account
             AND I am logged in
         WHEN I ask to create a new event
+            AND the end-date is after the start-date
         THEN I should be able to create a new event
         """
         url = reverse(self.list)
 
-        current_time = datetime.now()
-        example_content = {
-            "title": "Some title",
-            "primary_color": "#ffffff",
-            "secondary_color": "#ababab",
-            "start": current_time.isoformat(),
-            "end": (current_time + timedelta(days=2)).isoformat()
-        }
-
-        # Make sure it does not work without auth
-        res = self.client.post(url, example_content)
+        # Try without being logged in, this should fail
+        res = self.client.post(url, EXAMPLE_CONTENT)
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
         # Create a new note while logged in, this should work
         self.client.force_authenticate(user=self.user)
-        res = self.client.post(url, example_content)
+        res = self.client.post(url, EXAMPLE_CONTENT)
         assert res.status_code == status.HTTP_201_CREATED
         content = res.json()
         self._test_response_body(content)
 
-        # Does our aliasing of all_day to allDay work on write as well?
-        example_content["allDay"] = True
-        res = self.client.post(url, example_content)
+        # Make sure the aliasing of all_day to allDay works as expected
+        # The below should work and show up in the database,
+        # under it's actual name of 'all_day' instead of the provided 'allDay'
+        req_content = {**EXAMPLE_CONTENT, "allDay": True}
+        res = self.client.post(url, req_content)
         assert res.status_code == status.HTTP_201_CREATED
         content = res.json()
         assert content.get("allDay") is True
 
-        # Test with wrong datasets
-        # end-date == start-date
-        example_content["end"] = current_time
-        res = self.client.post(url, example_content)
+        # Attempt to create a new event,
+        # with the 'start_time', being the same as the 'end_time'.
+        # This should fail.
+        current_time = datetime.now()
+        req_content = {
+            **EXAMPLE_CONTENT,
+            "start": current_time.isoformat(),
+            "end": current_time.isoformat()
+        }
+        res = self.client.post(url, req_content)
         assert res.status_code == status.HTTP_400_BAD_REQUEST
 
     def test020_list(self):
@@ -118,185 +122,27 @@ class TestEvents(APITestCase):
         """
         url = reverse(self.list)
 
-        # Create a test event
-        self._sample_create()
-
-        # Make sure it does not work without auth
-        res = self.client.get(url)
-        assert res.status_code == status.HTTP_401_UNAUTHORIZED
-
-        # Make sure it does not work without query args
-        self.client.force_authenticate(user=self.user)
-        res = self.client.get(url)
-        assert res.status_code == status.HTTP_400_BAD_REQUEST
-
-        # We expect to get something back here,
-        # because we created it in the current month
-        url = self._generate_filter_url(
-            year=datetime.now().year,
-            month=datetime.now().month - 1
-        )
-        res = self.client.get(url)
-        assert res.status_code == status.HTTP_200_OK
-        content = res.json()
-        assert type(content) == list
-        assert len(content) == 1
-
-        # We create last months data here,
-        # so this should not show our event from this month
-        url = self._generate_filter_url(
-            year=datetime.now().year,
-            month=datetime.now().month - 2
-        )
-        res = self.client.get(url)
-        assert res.status_code == status.HTTP_200_OK
-        content = res.json()
-        assert type(content) == list
-        assert len(content) == 0
-
-    def test030_list_filtering(self):
-        # All the below times are in UTC
-        # Now we have an event from 22:14 - 23:14
-        # on the last day of November
+        # Create a test event.
+        # We use only UTC-Times for this because this is consistent
+        # with Frontend, which sends only UTC-Times when creating Notes
+        # and instead provides the timezone for filtering only,
+        # while converting the times client-side.
         start_time = timezone.datetime(
-            year=2020, month=11, day=30,
-            hour=22, minute=14, second=27
-        )
-        end_time = start_time + timezone.timedelta(minutes=60)
-
-        self._sample_create(
-            {
-                "title": "Some title",
-                "primary_color": "#ffffff",
-                "secondary_color": "#ababab",
-                "start": start_time.isoformat(),
-                "end": end_time.isoformat()
-            }
-        )
-
-        # German-Time (+1 UTC)
-        # Lets say we are in Germany now and want to filter our calendar
-        # We expect this to be in Nov, as well as Dec because
-        # of the timezone change
-        url = self._generate_filter_url(
-            year=start_time.year,
-            month=start_time.month - 1,
-            tz=(-60)
-        )
-
-        self.client.force_authenticate(user=self.user)
-        res = self.client.get(url)
-        assert len(res.json()) == 1
-
-        url = self._generate_filter_url(
-            year=start_time.year,
-            month=start_time.month,
-            tz=(-60)
-        )
-        res = self.client.get(url)
-        assert len(res.json()) == 1
-
-        url = self._generate_filter_url(
-            year=start_time.year,
-            month=start_time.month - 2,
-            tz=(-60)
-        )
-        res = self.client.get(url)
-        assert len(res.json()) == 0
-
-    def test040_list_filtering_2(self):
-        start_time = timezone.datetime(
-            year=2020, month=11, day=30,
-            hour=22, minute=14, second=27
-        )
-
-        # Test everything above but without an end attribute
-        self._sample_create(
-            {
-                "title": "Some title",
-                "primary_color": "#ffffff",
-                "secondary_color": "#ababab",
-                "start": start_time.isoformat(),
-            }
-        )
-        # German-Time (+1 UTC)
-        # Lets say we are in Germany now and want to filter our calendar
-        # We expect this to be in Nov, as well as Dec because
-        # of the timezone change
-        url = self._generate_filter_url(
-            year=start_time.year,
-            month=start_time.month - 1,
-            tz=(-60)
-        )
-
-        self.client.force_authenticate(user=self.user)
-        res = self.client.get(url)
-        assert len(res.json()) == 1
-
-        url = self._generate_filter_url(
-            year=start_time.year,
-            month=start_time.month,
-            tz=(-60)
-        )
-        res = self.client.get(url)
-        assert len(res.json()) == 0
-
-        url = self._generate_filter_url(
-            year=start_time.year,
-            month=start_time.month - 2,
-            tz=(-60)
-        )
-        res = self.client.get(url)
-        assert len(res.json()) == 0
-
-    def test050_list_filtering_3(self):
-        # Test with the end time being 00:00, at the end of a month
-        # This should still be returned for next month
-        start_time = timezone.datetime(
-            year=2020, month=11, day=30,
-            hour=23, minute=0, second=0
-        )
-        end_time = start_time + timezone.timedelta(hours=1)
-
-        self._sample_create(
-            {
-                "title": "Some title 2",
-                "primary_color": "#ffffff",
-                "secondary_color": "#ababab",
-                "start": start_time.isoformat(),
-                "end": end_time.isoformat()
-            }
-        )
-
-        # This is for the month we created in
-        self.client.force_authenticate(user=self.user)
-        url = self._generate_filter_url(
-            year=start_time.year,
-            month=start_time.month - 1,
-        )
-        res = self.client.get(url)
-        assert len(res.json()) == 1
-
-        # This is for the month after that
-        url = self._generate_filter_url(
-            year=start_time.year,
-            month=start_time.month,
-        )
-        res = self.client.get(url)
-        assert len(res.json()) == 1
-
-    def test060_list_filtering_4(self):
-        # Test the previous scenario but with differing years
-        # This should still be returned for next month
-        start_time = timezone.datetime(
-            year=2020, month=12, day=31,
-            hour=22, minute=12, second=0
+            year=2020,
+            month=12,
+            day=31,
+            hour=22,
+            minute=12,
+            second=0
         )
         end_time = timezone.datetime(
-            year=2020, month=12, day=31,
-            hour=23, minute=0, second=0
+            year=2020,
+            month=12,
+            day=31,
+            hour=23,
+            minute=0,
+            second=0
         )
-
         self._sample_create(
             {
                 "title": "Some title 15",
@@ -307,8 +153,21 @@ class TestEvents(APITestCase):
             }
         )
 
-        # This is for the month we created in
+        # Try without being logged in, this should fail
+        res = self.client.get(url)
+        assert res.status_code == status.HTTP_401_UNAUTHORIZED
+
+        # Try without the required query params of 'month' and 'year'
+        # This should fail.
         self.client.force_authenticate(user=self.user)
+        res = self.client.get(url)
+        assert res.status_code == status.HTTP_400_BAD_REQUEST
+
+        # Try filtering for the month we created in.
+        # This should work and return the event.
+        self.client.force_authenticate(user=self.user)
+        # This is for the month of December (so 12) but -1
+        # And for German-Time, which is 1 hour ahead of UTC.
         url = self._generate_filter_url(
             year=2020,
             month=11,
@@ -317,7 +176,11 @@ class TestEvents(APITestCase):
         res = self.client.get(url)
         assert len(res.json()) == 1
 
-        # This is for the month after that
+        # Now we check for the first month of the next year,
+        # This should still work because the 'end_date' of the event,
+        # is at 11pm UTC, which, since we filter based on German time offset,
+        # would be 00:00 of the 1st of Jan. 2021.
+        # As such this should still give us the event back.
         url = self._generate_filter_url(
             year=2021,
             month=0,
