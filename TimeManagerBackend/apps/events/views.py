@@ -1,11 +1,12 @@
-from django.utils import timezone
+import pytz
 from dateutil.relativedelta import relativedelta
+from django.db.models import Q
+from django.utils import timezone
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.request import Request
-from django.db.models import Q
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.response import Response
-from rest_framework import status
 
 from .models import Event
 from .models import serializers
@@ -15,6 +16,10 @@ class EventsViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.EventsSerializer
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            # queryset just for schema generation metadata
+            return Event.objects.none()
+
         return Event.objects.filter(
             creator=self.request.user
         )
@@ -37,11 +42,20 @@ class EventsViewSet(viewsets.ModelViewSet):
         month = query_serializer.validated_data.get("month") + 1
         year = query_serializer.validated_data.get("year")
         tz = query_serializer.validated_data.get("tz")
+
+        # The 'tzinfo', is to silence the warning
+        # about non-aware datetime objects, that Django throws by default
         start_date = timezone.datetime(
-            day=1, month=month, year=year
+            day=1, month=month, year=year, tzinfo=pytz.UTC
         )
-        start_date += timezone.timedelta(minutes=tz)
         end_date = start_date + relativedelta(months=1)
+
+        # If the timezone of the user was e.g. 60 mins ahead of UTC
+        # which is the servers time, then we would get sent '60'.
+        # Since we get the dates in UTC themselves we need to actually
+        # subtract that number for proper querying
+        start_date -= relativedelta(minutes=tz)
+        end_date -= relativedelta(minutes=tz)
 
         queryset = self.get_queryset()
         events = queryset.filter(

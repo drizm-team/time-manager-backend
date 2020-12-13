@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -75,7 +76,11 @@ class UserViewSet(PatchUpdateModelViewSet):
 
     def get_queryset(self):
         User = get_user_model()
-        return User.objects.filter(id=self.request.user.id).all()
+        if getattr(self, 'swagger_fake_view', False):
+            # queryset just for schema generation metadata
+            return User.objects.none()
+
+        return User.objects.filter(id=self.request.user.id)
 
     def get_permissions(self):
         if self.action == "create":

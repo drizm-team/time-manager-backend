@@ -1,0 +1,13 @@
+runtime: python38
+
+instance_class: F1
+
+automatic_scaling:
+  min_instances: 1
+  max_instances: 2
+  min_pending_latency: 500ms
+  max_pending_latency: 4000ms
+  max_concurrent_requests: 15
+
+env_variables:
+  DJANGO_SETTINGS_MODULE: "TimeManagerBackend.settings.production"
