@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'corsheaders',
+    'django_prometheus',
     'rest_framework_simplejwt.token_blacklist',
 
     # Default apps
@@ -47,6 +48,7 @@ INSTALLED_APPS = [
     'TimeManagerBackend.apps.notes',
 ]
 MIDDLEWARE = [
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'corsheaders.middleware.CorsMiddleware',
@@ -55,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware'
 ]
 
 
@@ -65,7 +68,7 @@ CLOUD_SQL_CONN_NAME = f"{terraform.vars.project_name}:" \
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django_prometheus.db.backends.postgresql_psycopg2',
         'HOST': f"/cloudsql/{CLOUD_SQL_CONN_NAME}",
         'PORT': "5432",
         'NAME': terraform.vars.db_name,
