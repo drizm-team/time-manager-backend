@@ -4,6 +4,7 @@ from typing import Optional
 import google.auth.transport.requests
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import AnonymousUser
 from google.oauth2 import id_token
 from rest_framework.authentication import (
     BaseAuthentication,
@@ -75,11 +76,12 @@ ServiceAccountIDTokenAuthStrictWhenLive = ServiceAccountIDTokenAuth(
 
 class IsServiceAccount(BasePermission):
     def has_permission(self, request, view) -> bool:
-        if not request.user:
+        user = request.user
+        if not user or isinstance(user, AnonymousUser):
             return False
         group = settings.SERVICE_ACCOUNT_GROUP_NAME
         return bool(
-            request.user and group in request.user.groups.values_list(
+            user and group in user.groups.values_list(
                 "name", flat=True
             )
         )
