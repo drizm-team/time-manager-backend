@@ -1,8 +1,9 @@
-from django.contrib import admin
-from django.urls import path, include, re_path
-from .docs.openapi import schema_view
 from django.conf import settings
+from django.urls import path, include, re_path
 from django.views.generic.base import RedirectView
+
+from .docs.openapi import schema_view
+from .lib.prometheus import prom_view
 
 favicon_view = RedirectView.as_view(url='/static/favicon.ico', permanent=True)
 
@@ -25,6 +26,13 @@ urlpatterns = [
             'TimeManagerBackend.apps.tokens.urls',
             namespace="tokens"
         )
+    ),
+
+    # Prometheus Metrics Endpoint
+    path(
+        'metrics/',
+        prom_view,
+        name="prometheus_django_metrics"
     ),
 
     # User defined URL paths
