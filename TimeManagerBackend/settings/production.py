@@ -68,7 +68,7 @@ CLOUD_SQL_CONN_NAME = f"{terraform.vars.project_name}:" \
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django_prometheus.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django_prometheus.db.backends.postgresql',
         'HOST': f"/cloudsql/{CLOUD_SQL_CONN_NAME}",
         'PORT': "5432",
         'NAME': terraform.vars.db_name,
