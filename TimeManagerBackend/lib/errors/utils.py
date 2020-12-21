@@ -4,11 +4,6 @@ from typing import Union
 from rest_framework.response import Response
 
 
-def camel_to_snake(name: str):
-    name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
-    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', name).lower()
-
-
 def self_test(error_response: Response) -> None:
     """
     Checks the structure of exceptions,
@@ -29,7 +24,7 @@ def self_test(error_response: Response) -> None:
         )
 
     # Matches all special characters except _ and .
-    pattern = re.compile(r"(?=\W)(?=[^_.])")
+    pattern = re.compile(r"(?=\W)(?=[^_.'])")
 
     for v in ("detail", "code"):
         value = content.get(v)
@@ -42,7 +37,7 @@ def self_test(error_response: Response) -> None:
         if r := re.match(pattern, value):
             raise ValueError(
                 f"'{v}' cannot contain any special characters, "
-                f"except for '.' and '_'. Detected forbidden character "
+                f"except for '.', ' and '_'. Detected forbidden character "
                 f"'{r[0]}' in '{value}'."
             )
 
