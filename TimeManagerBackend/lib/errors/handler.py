@@ -3,12 +3,11 @@ from typing import Dict, Any
 from django.conf import settings
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
-from rest_framework.exceptions import APIException, ErrorDetail
+from drizm_commons.utils import camel_to_snake  # noqa dep not in dunder all
 from rest_framework import exceptions
+from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
-
-from .utils import self_test, camel_to_snake
 
 
 # TODO: Implement remote logging for these error cases
@@ -96,6 +95,8 @@ def global_default_exception_handler(
         exc: APIException,
         context: Dict[str, Any]
 ) -> Response:
+    if settings.DEBUG_PROPAGATE_EXCEPTIONS:
+        return exception_handler(exc, context)
     """
     Serializes all exceptions to the following default structure:
     {
@@ -115,7 +116,9 @@ def global_default_exception_handler(
 
         # In case a catastrophic failure occurs,
         # we cannot risk leaking any info
-        if status == 500:  # SERVER_ERROR
+        if status == 500 and (
+                not settings.TESTING and not settings.DEBUG
+        ):  # SERVER_ERROR
             return get_server_error_response()
 
         resp = Response(
