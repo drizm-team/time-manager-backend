@@ -4,6 +4,9 @@ from rest_framework import serializers
 from rest_framework.request import Request
 from rest_framework.validators import UniqueValidator
 
+from TimeManagerBackend.apps.images.models import UserProfilePicture
+from TimeManagerBackend.apps.images.models.serializers import UserProfilePictureSerializer
+
 
 class UserSerializer(serializers.Serializer):
     self = SelfHrefField(
@@ -33,13 +36,40 @@ class UserSerializer(serializers.Serializer):
         max_length=150,
         required=False,
     )
+    profile_picture = UserProfilePictureSerializer(required=True)
 
     def create(self, validated_data):
+        profile_picture_data = validated_data.pop("profile_picture")
+        profile_picture = UserProfilePicture.objects.create(
+            **profile_picture_data
+        )
+        validated_data["profile_picture"] = profile_picture
+
         # Obtain and construct the model instance
-        model = get_user_model()
-        return model.objects.create_user(**validated_data)
+        User = get_user_model()
+        user = User.objects.create_user(**validated_data)
+
+        # The OneToOneField reverse accessor is not symmetrical
+        # So we need to also save the other instance
+        # for the changes to be reflected on both sides
+        profile_picture.save()
+
+        return user
 
     def update(self, instance, validated_data):
+        if validated_data.get("profile_picture"):
+            profile_picture_data = validated_data.pop("profile_picture")
+
+            for k, v in profile_picture_data.items():
+                setattr(instance.profile_picture, k, v)
+
+            instance.save()
+
+            # The OneToOneField reverse accessor is not symmetrical
+            # So we need to also save the other instance
+            # for the changes to be reflected on both sides
+            instance.profile_picture.save()
+
         if "password" in validated_data:
             new_password = validated_data.pop("password")
             instance.set_password(new_password)
