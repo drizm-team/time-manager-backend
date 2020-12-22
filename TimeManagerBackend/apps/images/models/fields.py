@@ -76,5 +76,5 @@ class Base64HrefImageField(Base64ImageField):
     def to_representation(self, value):
         val = super().to_representation(value)
         if not val:
-            return val
+            return None
         return {"href": value.url}

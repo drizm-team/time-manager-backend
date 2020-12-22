@@ -1,7 +1,6 @@
 import logging
 
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
@@ -29,7 +28,8 @@ from .models import serializers
 from .models.serializers import (
     UserSerializer,
     PasswordChangeSerializer,
-    EmailChangeSerializer
+    EmailChangeSerializer,
+    CurrentPasswordRequiredSerializer
 )
 
 
@@ -103,6 +103,18 @@ class UserViewSet(PatchUpdateModelViewSet):
             )
 
         return super().partial_update(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Delete User",
+        request_body=CurrentPasswordRequiredSerializer,
+    )
+    def destroy(self, request, *args, **kwargs):
+        serializer = CurrentPasswordRequiredSerializer(
+            data=request.data, context={"request": request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        return super().destroy(request, *args, **kwargs)
 
     @swagger_auto_schema(
         method="patch",

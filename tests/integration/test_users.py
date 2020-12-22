@@ -424,3 +424,41 @@ class TestUsers(APITestCase):
             "new_password": "hbgjhbihgbihr"
         })
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test080_delete(self):
+        """
+        GIVEN I have a user account
+            AND I am logged in
+        WHEN I ask to delete a user
+            AND that user is myself
+            AND I supply my valid current password
+        THEN I should be able to delete that user
+        """
+        url = reverse(self.detail, args=(self.user.id,))
+
+        # Should only work when we are logged in, this will fail
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        # Attempt to delete our user but without providing a password.
+        # This should fail.
+        self.client.force_authenticate(user=self.user)
+
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Attempt to delete our user but while providing an invalid password.
+        # This should fail.
+        res = self.client.delete(url, data={
+            "password": "".join(
+                random.choices(string.ascii_letters, k=16)
+            )
+        })
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Delete the user while being logged in and providing a valid password
+        # This should work.
+        res = self.client.delete(url, data={
+            "password": self.user_pw
+        })
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
