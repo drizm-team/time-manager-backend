@@ -1,12 +1,24 @@
 import random
 import string
 
+from django.conf import settings
+from drizm_commons.google.testing import TestStorageBucket
 from drizm_commons.utils import all_keys_present, url_is_http
+from google.cloud import exceptions
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
-from ..conftest import create_test_user, TEST_USER_PASSWORD, self_to_id
+from TimeManagerBackend.settings.production import terraform
+from ..conftest import (
+    create_test_user,
+    TEST_USER_PASSWORD,
+    self_to_id,
+    generate_test_image,
+    generate_image_b64,
+    random_hex_color
+)
+from django.contrib.auth import get_user_model
 
 
 class TestUsers(APITestCase):
@@ -20,19 +32,29 @@ class TestUsers(APITestCase):
         self.change_password = app_base % "change-password"
         self.change_email = app_base % "change-email"
 
+    # noinspection PyMethodMayBeStatic
     def _test_response_body(self, body: dict):
-        # Response Body should contain 'self', 'email' and the names
-        # 'first_name' and 'last_name', both which should be present
+        # Response Body should contain 'self', 'email', 'profile_picture'
+        # and the names 'first_name' and 'last_name', both which should be present,
         # even if their value is NULL
         assert all_keys_present(
-            body, ("self", "email", "first_name", "last_name")
+            body, (
+                "self", "email", "first_name", "last_name", "profile_picture"
+            )
+        )
+        assert all_keys_present(
+            body.get("profile_picture"), ("image", "background")
         )
 
+    # noinspection PyMethodMayBeStatic
     def _test_user_data(self) -> dict:
         email = f"{''.join(random.choices(string.ascii_letters, k=8))}@tester.de"
         return {
             "email": email,
-            "password": "somePasswordIdc"
+            "password": "somePasswordIdc",
+            "profile_picture": {
+                "background": random_hex_color()
+            }
         }
 
     def test010_retrieve(self):
@@ -158,7 +180,65 @@ class TestUsers(APITestCase):
         content = res.json()
         self.assertEqual(content["last_name"], LAST_NAME_TEST)
 
-    def test040_update_general(self):
+    def test040_profile_picture_upload(self):
+        """
+        GIVEN I am not logged in
+        WHEN I ask to create a new user
+            AND I provide a profile picture
+            AND that profile picture is Base64 encoded
+            AND the actual filesize is less than or equal to 200KB
+            AND the image dimensions are exactly 192x192px
+        THEN I should be able to create a new user
+            AND save the profile picture for that user
+        """
+        url = reverse(self.list)
+
+        # Create a testing storage bucket
+        cl = TestStorageBucket(
+            settings.GS_CREDENTIALS,
+            terraform.vars.project_name,
+            bucket_name=settings.GS_BUCKET_NAME
+        )
+        try:
+            cl.create()
+        except exceptions.Conflict:
+            cl.create(obtain_existing=True)
+
+        # Create a test image
+        image_file = generate_test_image("jpeg")
+        b64_image = generate_image_b64(image_file)
+
+        # Attempt to create a new user, this should work
+        user_data = self._test_user_data()
+        user_data["profile_picture"] = {
+            "image": b64_image,
+            "background": "#ffffff"
+        }
+        res = self.client.post(url, data=user_data)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        content = res.json()
+        new_user_id = self_to_id(content)
+        User = get_user_model()
+        new_user = User.objects.get(pk=new_user_id)
+
+        # PATCH the profile picture back to None (effectively remove your profile picture)
+        # This should work
+        self.client.force_authenticate(user=new_user)
+        url = reverse(self.detail, args=(new_user_id,))
+        res = self.client.patch(url, data={
+            "profile_picture": {
+                "image": None
+            }
+        })
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        content = res.json()
+        self.assertEqual(content["profile_picture"]["image"], None)
+
+        # Remove the testing bucket
+        cl.destroy()
+
+    def test050_update_general(self):
         """
         GIVEN I have a user account
             AND I am logged in
@@ -204,7 +284,7 @@ class TestUsers(APITestCase):
         })
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test050_update_email(self):
+    def test060_update_email(self):
         """
         GIVEN I have a user account
             AND I am logged in
@@ -286,7 +366,7 @@ class TestUsers(APITestCase):
         })
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test060_update_password(self):
+    def test070_update_password(self):
         """
         GIVEN I have a user account
             AND I am logged in

@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # User defined apps
     'TimeManagerBackend.apps.events',
     'TimeManagerBackend.apps.notes',
+    'TimeManagerBackend.apps.images',
 ]
 MIDDLEWARE = [
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
@@ -137,7 +138,15 @@ CROS_PREFLIGHT_MAX_AGE = 600
 STATIC_URL = '/static/'
 
 DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+
+# This is to protect from too large request bodies being used for DoS
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1048576  # 1MiB
+# With our current requirements the maximum filesize is capped at 200KB
+# So this value is okay and still gives some leeway
+MAX_UPLOAD_SIZE = 512000  # 500KiB
+
 STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+
 GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
     GS_CREDENTIALS_FILE
 )

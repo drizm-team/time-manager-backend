@@ -1,4 +1,4 @@
-from .production import *  # noqa
+import uuid
 
 # We need to import under different names to avoid clashes,
 # with any other storage implementations from production.py
@@ -7,7 +7,10 @@ from django.conf.global_settings import (
     DEFAULT_FILE_STORAGE as DEFAULT_FILE_BACKEND
 )
 
+from .production import *  # noqa
+
 DEBUG = True
+DEBUG_PROPAGATE_EXCEPTIONS = True
 
 DATABASES = {
     'default': {
@@ -49,4 +52,9 @@ STATIC_URL = '/static/'
 STATIC_ROOT = '/var/django/projects/TimeManagerBackend/static/'  # noqa
 
 STATICFILES_STORAGE = DEFAULT_STATIC_STORAGE
-DEFAULT_FILE_STORAGE = DEFAULT_FILE_BACKEND
+
+if DEBUG and TESTING:
+    GS_BUCKET_NAME = f"{uuid.uuid4()}__test_bucket"
+
+if DEBUG and not TESTING:
+    DEFAULT_FILE_STORAGE = DEFAULT_FILE_BACKEND
