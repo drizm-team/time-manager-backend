@@ -1,5 +1,5 @@
 SHELL := /bin/bash
-.DEFAULT_GOAL := help
+.DEFAULT_GOAL := install
 
 app_src = TimeManagerBackend
 tests_src = tests
@@ -21,8 +21,14 @@ format:
 requirements:
 	@poetry export --dev --without-hashes -f requirements.txt > requirements.txt
 
-.PHONY: help
-help:
-	@echo "Format your code by running 'make format'"
-	@echo "Formatting configuration can be found in:"
-	@echo "pyproject.toml, setup.cfg"
+.PHONY: deploy_start
+deploy_start:
+	@(exec ./scripts/deploy.sh)
+
+.PHONY: deploy_reset
+deploy_reset:
+	@(exec ./scripts/reset_db.sh)
+
+.PHONY: install
+install:
+	@poetry install

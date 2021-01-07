@@ -30,11 +30,13 @@ class UserSerializer(serializers.Serializer):
         min_length=2,
         max_length=150,
         required=False,
+        allow_null=True
     )
     last_name = serializers.CharField(
         min_length=2,
         max_length=150,
         required=False,
+        allow_null=True
     )
     profile_picture = UserProfilePictureSerializer(required=True)
 

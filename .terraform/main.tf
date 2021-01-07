@@ -40,7 +40,6 @@ Bucket config
 resource "google_storage_bucket" "static" {
   name                        = var.static_bucket_name
   location                    = upper(var.project_region)
-  uniform_bucket_level_access = true
   force_destroy               = true
 }
 

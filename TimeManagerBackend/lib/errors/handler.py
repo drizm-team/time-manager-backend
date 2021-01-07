@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, Any
 
 from django.conf import settings
@@ -9,11 +10,15 @@ from rest_framework.exceptions import APIException
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
+from .utils import self_test
 
-# TODO: Implement remote logging for these error cases
 
+def get_server_error_response(exc):
+    if not settings.DEBUG and not settings.TESTING:
+        # Automatically log all critical server errors
+        logger = logging.getLogger("failure-500")
+        logger.error(exc)
 
-def get_server_error_response():
     return Response(
         {
             "detail": "An Unknown Error occured.",
@@ -95,8 +100,6 @@ def global_default_exception_handler(
         exc: APIException,
         context: Dict[str, Any]
 ) -> Response:
-    if settings.DEBUG_PROPAGATE_EXCEPTIONS:
-        return exception_handler(exc, context)
     """
     Serializes all exceptions to the following default structure:
     {
@@ -104,6 +107,9 @@ def global_default_exception_handler(
         "code": "error_not_valid"
     }
     """
+    if settings.DEBUG_PROPAGATE_EXCEPTIONS:
+        return exception_handler(exc, context)
+
     # Manually map Django exceptions here
     # and transform them to DRF exceptions for consistency
     if isinstance(exc, Http404):
@@ -119,7 +125,7 @@ def global_default_exception_handler(
         if status == 500 and (
                 not settings.TESTING and not settings.DEBUG
         ):  # SERVER_ERROR
-            return get_server_error_response()
+            return get_server_error_response(exc)
 
         resp = Response(
             {
@@ -136,7 +142,7 @@ def global_default_exception_handler(
             # Again, in case a 500 occurs we should send basically
             # no data to external sources because it may be sensitive
             if resp.status_code == 500:  # SERVER_ERROR
-                return get_server_error_response()
+                return get_server_error_response(exc)
 
         else:
             raise exc
