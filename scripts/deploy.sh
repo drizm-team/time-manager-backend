@@ -1,6 +1,7 @@
 #!/bin/bash
 export DJANGO_SETTINGS_MODULE=TimeManagerBackend.settings.production
 export MIGRATION_MODE=1
+source "$(dirname "$0")"/common.sh
 
 if [ "$1" = "--initial" ]; then
   tfenv use
@@ -19,10 +20,7 @@ fi
 
 printf "Attempting Migrations and Staticfile collection...\n"
 
-command="poetry run python <<< 'from django.conf import settings; print(settings.CLOUD_SQL_CONN_NAME)'"
-eval "$command" > ./test.log
-conn_string=$(cat ./test.log)
-rm -rf ./test.log
+conn_string=$(django_settings CLOUD_SQL_CONN_NAME)
 
 ~/cloud_sql_proxy -instances="$conn_string"=tcp:5432 &
 pid=$!
