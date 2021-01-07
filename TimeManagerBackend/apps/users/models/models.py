@@ -42,6 +42,16 @@ class User(ExportModelOperationsMixin("user"), AbstractUser):
         unique=True,
         default=None
     )
+    first_name = models.CharField(
+        _('first name'),
+        max_length=150,
+        null=True
+    )
+    last_name = models.CharField(
+        _('last name'),
+        max_length=150,
+        null=True
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
