@@ -6,8 +6,11 @@ for the time-manager project.
 The project can currently be found at:
 https://api.chrono.drizm.com/
 
-Current live version (Commit hash):
+Current live version (Commit hash):  
 c0e8f671
+
+Install dependencies:  
+``make``
 
 ## Related Infrastructure
 
@@ -25,7 +28,7 @@ CloudScheduler Cron frequency:
 The CloudScheduler Cron must be invoked
 through the exodia service account.
 
-## Local Deployment
+## Deployment
 
 ### Prerequisites
 
@@ -42,10 +45,10 @@ through the exodia service account.
 The "keys" directory contains the .json
 keys for Google Cloud Platform service
 accounts.  
-By default this project will expect a user
+By default, this project will expect a user
 called **exodia_cron**.  
-This user is required but you can add more
-if wanted.  
+This user is required, but you can add
+additional ones if wanted.
 
 All users added to this folder will
 qualify to request to management
@@ -86,10 +89,14 @@ Once everything is done, simply run:
 - Auth credentials for project in CLI
 
 For initial deployment:  
-``bash deploy.sh --initial``  
+``make deploy_initial``  
 
 For refresh deployments:  
-``bash.deploy.sh``
+``make deploy_refresh``
+
+To completely reset and
+update a deployment:  
+``make deploy_reset``
 
 ## Documentation
 

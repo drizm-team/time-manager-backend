@@ -21,14 +21,21 @@ format:
 requirements:
 	@poetry export --dev --without-hashes -f requirements.txt > requirements.txt
 
-.PHONY: deploy_start
+.PHONY: deploy_initial
+deploy_start:
+	@(exec ./scripts/deploy.sh --initial)
+
+.PHONY: deploy_update
 deploy_start:
 	@(exec ./scripts/deploy.sh)
 
 .PHONY: deploy_reset
 deploy_reset:
 	@(exec ./scripts/reset_db.sh)
+	@make deploy_update
 
 .PHONY: install
 install:
 	@poetry install
+	@poetry update
+	@make requirements
