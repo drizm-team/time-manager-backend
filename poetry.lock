@@ -303,7 +303,7 @@ description = "Django commons for the Drizm organization"
 name = "drizm-django-commons"
 optional = false
 python-versions = ">=3.8,<4.0"
-version = "0.3.1"
+version = "0.3.1.1"
 
 [package.dependencies]
 django = "3.1.1"
@@ -632,13 +632,14 @@ category = "main"
 description = "JSON Web Token implementation in Python"
 name = "pyjwt"
 optional = false
-python-versions = "*"
-version = "1.7.1"
+python-versions = ">=3.6"
+version = "2.0.0"
 
 [package.extras]
-crypto = ["cryptography (>=1.4)"]
-flake8 = ["flake8", "flake8-import-order", "pep8-naming"]
-test = ["pytest (>=4.0.1,<5.0.0)", "pytest-cov (>=2.6.0,<3.0.0)", "pytest-runner (>=4.2,<5.0.0)"]
+crypto = ["cryptography (>=3.3.1,<4.0.0)"]
+dev = ["sphinx", "sphinx-rtd-theme", "zope.interface", "cryptography (>=3.3.1,<4.0.0)", "pytest (>=6.0.0,<7.0.0)", "coverage (5.0.4)", "mypy", "pre-commit"]
+docs = ["sphinx", "sphinx-rtd-theme", "zope.interface"]
+tests = ["pytest (>=6.0.0,<7.0.0)", "coverage (5.0.4)"]
 
 [[package]]
 category = "main"
@@ -909,8 +910,8 @@ drizm-commons = [
     {file = "drizm_commons-0.4.2-py3-none-any.whl", hash = "sha256:d63f7caf2224b21d6f05656e94ccc5dc2a68b5ee1370adf1caae864cc4c6662a"},
 ]
 drizm-django-commons = [
-    {file = "drizm-django-commons-0.3.1.tar.gz", hash = "sha256:65e7768e2f006c13f2a40879f1a6b27e56855296aebf1af62986faf0919f48a1"},
-    {file = "drizm_django_commons-0.3.1-py3-none-any.whl", hash = "sha256:57b836beb1b1ad65bb45688f91836be128ee5bd36a6d04ec71801f78afe088ee"},
+    {file = "drizm-django-commons-0.3.1.1.tar.gz", hash = "sha256:16e2c00682cd9152b92a00d2272de65670ad6a188fee47c12710a46751c11c2e"},
+    {file = "drizm_django_commons-0.3.1.1-py3-none-any.whl", hash = "sha256:a131697154751700d9e3da8e2e8b2065d6473c1eda0104baea4ee048eea968e2"},
 ]
 fs = [
     {file = "fs-2.4.11-py2.py3-none-any.whl", hash = "sha256:cd6b178f373a0370feac8612fd3c142aa6a5cadd3d471b525b08db4d3b511c9c"},
@@ -1154,8 +1155,8 @@ pyflakes = [
     {file = "pyflakes-2.2.0.tar.gz", hash = "sha256:35b2d75ee967ea93b55750aa9edbbf72813e06a66ba54438df2cfac9e3c27fc8"},
 ]
 pyjwt = [
-    {file = "PyJWT-1.7.1-py2.py3-none-any.whl", hash = "sha256:5c6eca3c2940464d106b99ba83b00c6add741c9becaec087fb7ccdefea71350e"},
-    {file = "PyJWT-1.7.1.tar.gz", hash = "sha256:8d59a976fb773f3e6a39c85636357c4f0e242707394cadadd9814f5cbaa20e96"},
+    {file = "PyJWT-2.0.0-py3-none-any.whl", hash = "sha256:5c2ff2eb27d7e342dfc3cafcc16412781f06db2690fbef81922b0172598f085b"},
+    {file = "PyJWT-2.0.0.tar.gz", hash = "sha256:7a2b271c6dac2fda9e0c33d176c4253faba2c6c6b3a99c7f28a32c3c97522779"},
 ]
 pyparsing = [
     {file = "pyparsing-2.4.7-py2.py3-none-any.whl", hash = "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"},
