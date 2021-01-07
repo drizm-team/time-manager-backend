@@ -18,6 +18,7 @@ from ..conftest import (
     generate_image_b64,
     random_hex_color
 )
+from ..data.b64 import IMG
 from django.contrib.auth import get_user_model
 
 
@@ -139,12 +140,12 @@ class TestUsers(APITestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
         # Create a user, while specifying literal 'None' for both names
-        # This should fail
+        # This should work
         user_data = self._test_user_data()
         user_data["first_name"] = None
         user_data["last_name"] = None
         res = self.client.post(url, data=user_data)
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
 
         # Create a user, while specifying only 'first_name'
         # This is expected to work
@@ -235,6 +236,15 @@ class TestUsers(APITestCase):
         content = res.json()
         self.assertEqual(content["profile_picture"]["image"], None)
 
+        # PATCH to a new profile picture with a different format
+        # This should work
+        res = self.client.patch(url, data={
+            "profile_picture": {
+                "image": IMG  # base64 as formatted by Frontend
+            }
+        })
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
         # Remove the testing bucket
         cl.destroy()
 
@@ -277,12 +287,13 @@ class TestUsers(APITestCase):
         self._test_response_body(content)
         self.assertEqual(content["first_name"], FIRST_NAME_TEST)
 
-        # Update the name of the user to literal None
-        # This should fail
-        res = self.client.patch(url, data={
-            "first_name": None
-        })
-        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        # Update both name fields of the user to literal None
+        # This should work in order to allow unsetting of names
+        for name_field in ("first_name", "last_name"):
+            res = self.client.patch(url, data={
+                name_field: None
+            })
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test060_update_email(self):
         """
