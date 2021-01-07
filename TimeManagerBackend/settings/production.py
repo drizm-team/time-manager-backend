@@ -10,6 +10,7 @@ import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEBUG = False
+DEBUG_PROPAGATE_EXCEPTIONS = False
 TESTING = 'test' in sys.argv  # detect if we are running tests
 
 terraform = Tfvars(
@@ -152,6 +153,7 @@ GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
 )
 GS_BUCKET_NAME = terraform.vars.static_bucket_name
 GS_PROJECT_ID = terraform.vars.project_name
+GS_QUERYSTRING_AUTH = False
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "media"),
@@ -243,6 +245,11 @@ if os.getenv("GAE_APPLICATION"):
                 'handlers': ['stackdriver'],
                 'level': 'DEBUG',
                 'name': 'cloud'
+            },
+            'failure-500': {
+                'handlers': ['stackdriver'],
+                'level': 'ERROR',
+                'name': 'failure-500'
             },
             'django': {
                 'handlers': ['stackdriver'],
