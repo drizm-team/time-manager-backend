@@ -1,6 +1,6 @@
 import uuid
 
-from drizm_commons import utils
+from drizm_commons.testing.truthiness import all_keys_present
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
@@ -41,7 +41,7 @@ class TestNotes(APITestCase):
         })
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(self.user, Note.objects.get(pk=pk).creator)
-        assert utils.all_keys_present(res.json(), ("self", "content"))
+        assert all_keys_present(res.json(), ("self", "content"))
 
         # Create a note without specifying any body,
         # thus not providing any content

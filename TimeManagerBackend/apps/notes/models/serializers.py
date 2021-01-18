@@ -3,7 +3,7 @@ from drizm_django_commons.serializers.fields import SelfHrefField
 
 from rest_framework import serializers
 from .models import Note
-from drizm_commons.utils import uuid4_is_valid
+from drizm_commons.testing.truthiness import uuid4_is_valid
 
 
 class NotesSerializer(HrefModelSerializer):

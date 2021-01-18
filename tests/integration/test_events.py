@@ -3,7 +3,7 @@ from typing import Optional
 
 from django.http import QueryDict
 from django.utils import timezone
-from drizm_commons.utils import all_keys_present
+from drizm_commons.testing.truthiness import all_keys_present
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase

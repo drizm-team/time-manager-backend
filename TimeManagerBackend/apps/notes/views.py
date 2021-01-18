@@ -1,12 +1,12 @@
 from django.http import Http404
 from django.utils.decorators import method_decorator
-from rest_framework import status, exceptions
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework import status
 from rest_framework import viewsets, mixins
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
-from drf_yasg.utils import swagger_auto_schema
 
 from .models import Note
 from .models.serializers import (

@@ -3,7 +3,7 @@ import string
 
 from django.conf import settings
 from drizm_commons.google.testing import TestStorageBucket
-from drizm_commons.utils import all_keys_present, url_is_http
+from drizm_commons.testing.truthiness import all_keys_present, uri_is_http
 from google.cloud import exceptions
 from rest_framework import status
 from rest_framework.reverse import reverse
@@ -81,7 +81,7 @@ class TestUsers(APITestCase):
         # 'self' should be a valid URL,
         # that when requested returns the same data we just received
         self_ = content["self"]["href"]
-        assert url_is_http(self_)
+        assert uri_is_http(self_)
         self_res = self.client.get(self_)
         self.assertEqual(res.json(), self_res.json())
 
