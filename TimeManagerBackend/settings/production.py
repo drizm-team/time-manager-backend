@@ -1,6 +1,7 @@
 import os
 import django
-from drizm_commons.utils import Path, Tfvars
+from drizm_commons.utils.pathing import Path
+from drizm_commons.utils.tf import Tfvars
 from google.oauth2 import service_account
 
 from TimeManagerBackend.docs.settings import *  # noqa
@@ -77,6 +78,10 @@ DATABASES = {
         'USER': terraform.vars.db_username,
         'PASSWORD': terraform.vars.db_password,
     }
+}
+
+FIRESTORE_DATABASES = {
+    'default': {}
 }
 
 if os.getenv("MIGRATION_MODE"):

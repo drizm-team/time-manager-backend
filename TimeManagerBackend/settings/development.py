@@ -19,6 +19,13 @@ DATABASES = {
     }
 }
 
+FIRESTORE_DATABASES = {
+    'default': {
+        'HOST': 'localhost',
+        'PORT': '8080',
+    }
+}
+
 MIDDLEWARE = [
     # Activate CORS
     'corsheaders.middleware.CorsMiddleware',
