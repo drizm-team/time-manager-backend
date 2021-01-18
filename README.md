@@ -77,6 +77,22 @@ Once everything is done, simply run:
 ``cd docker``  
 ``docker-compose up --build``
 
+#### Firebase Initialization
+
+This project uses the Firebase CLI
+and runs on the emulator suite of
+Firebase.
+
+As such you need to ensure you have
+the Firebase CLI installed and setup.
+
+Then run ``firebase emulators init``
+and select the **time-manager**
+project, to finish the setup.
+
+Afterwards you are ready to deploy
+or test the project.
+
 ## Deployment
 
 ### Prerequsites
