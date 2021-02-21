@@ -445,16 +445,15 @@ grpc = ["grpcio (>=1.8.2,<2.0dev)"]
 
 [[package]]
 name = "google-cloud-firestore"
-version = "2.0.2"
+version = "1.9.0"
 description = "Google Cloud Firestore API client library"
 category = "main"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
 
 [package.dependencies]
-google-api-core = {version = ">=1.22.1,<2.0.0dev", extras = ["grpc"]}
+google-api-core = {version = ">=1.14.0,<2.0.0dev", extras = ["grpc"]}
 google-cloud-core = ">=1.4.1,<2.0dev"
-proto-plus = ">=1.3.0"
 pytz = "*"
 
 [[package]]
@@ -653,20 +652,6 @@ python-versions = "*"
 
 [package.extras]
 twisted = ["twisted"]
-
-[[package]]
-name = "proto-plus"
-version = "1.13.0"
-description = "Beautiful, Pythonic protocol buffers."
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-protobuf = ">=3.12.0"
-
-[package.extras]
-testing = ["google-api-core[grpc] (>=1.22.2)"]
 
 [[package]]
 name = "protobuf"
@@ -879,7 +864,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8, <3.9"
-content-hash = "98b84aa90f83b1cea9c05a263f3dcf3a1ee5b1af9212a9b4d048bc5007796915"
+content-hash = "9eab785441b36ba05c71a7cd9779157b8d387a391cb4373bec919c8f2286c1db"
 
 [metadata.files]
 appdirs = [
@@ -1044,8 +1029,8 @@ google-cloud-core = [
     {file = "google_cloud_core-1.5.0-py2.py3-none-any.whl", hash = "sha256:99a8a15f406f53f2b11bda1f45f952a9cdfbdbba8abf40c75651019d800879f5"},
 ]
 google-cloud-firestore = [
-    {file = "google-cloud-firestore-2.0.2.tar.gz", hash = "sha256:493d2be721d1c43654b114c40566cfc77d659d14e0e79fa8ead2ae38ef13bae0"},
-    {file = "google_cloud_firestore-2.0.2-py2.py3-none-any.whl", hash = "sha256:edfc0b32cada10d58d3fb4654f9d806bb0506341fc544301130b45861b27d17a"},
+    {file = "google-cloud-firestore-1.9.0.tar.gz", hash = "sha256:d8a56919a3a32c7271d1253542ec24cb13f384a726fed354fdeb2a2269f25d1c"},
+    {file = "google_cloud_firestore-1.9.0-py2.py3-none-any.whl", hash = "sha256:2b2985180591433f9343b5b4cafb9b0dbe077ced95b3ac5c57ef850a0339a4ce"},
 ]
 google-cloud-logging = [
     {file = "google-cloud-logging-1.15.1.tar.gz", hash = "sha256:cb0d4af9d684eb8a416f14c39d9fa6314be3adf41db2dd8ee8e30db9e8853d90"},
@@ -1263,9 +1248,6 @@ pillow = [
 prometheus-client = [
     {file = "prometheus_client-0.9.0-py2.py3-none-any.whl", hash = "sha256:b08c34c328e1bf5961f0b4352668e6c8f145b4a087e09b7296ef62cbe4693d35"},
     {file = "prometheus_client-0.9.0.tar.gz", hash = "sha256:9da7b32f02439d8c04f7777021c304ed51d9ec180604700c1ba72a4d44dceb03"},
-]
-proto-plus = [
-    {file = "proto-plus-1.13.0.tar.gz", hash = "sha256:61b57c5257ca583af2ea1ad40e2b8f251988806eea9f01d119088976b995b2c4"},
 ]
 protobuf = [
     {file = "protobuf-3.14.0-cp27-cp27m-macosx_10_9_x86_64.whl", hash = "sha256:629b03fd3caae7f815b0c66b41273f6b1900a579e2ccb41ef4493a4f5fb84f3a"},
