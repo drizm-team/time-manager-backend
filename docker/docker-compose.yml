@@ -1,9 +1,27 @@
-version: "3"
+version: "3.4"
 
 services:
-  server:
+  database:
+    image: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: default
     ports:
-      - 8080:8080
+      - 5432:5432
+
+  firebase:
     build:
       context: ..
-      dockerfile: dev.dockerfile
+      dockerfile: ./docker/firebase.dockerfile
+    ports:
+      - 4000:4000
+      - 8080:8080
+    environment:
+      - ENV_TEST=0
+
+  cloud-storage:
+    image: fsouza/fake-gcs-server
+    ports:
+      - 4443:4443
+    network_mode: host
