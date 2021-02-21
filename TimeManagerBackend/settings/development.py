@@ -14,8 +14,12 @@ DEBUG_PROPAGATE_EXCEPTIONS = True
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.getenv('DJANGO_DB_NAME', 'default'),
+        'USER': 'root',
+        'PASSWORD': 'root',
+        'HOST': os.getenv('DJANGO_DB_HOST', 'localhost'),
+        'PORT': '5432',
     }
 }
 
