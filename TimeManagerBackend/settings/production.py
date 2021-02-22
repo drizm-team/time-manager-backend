@@ -27,7 +27,6 @@ SERVICE_ACCOUNT_GROUP_NAME = "gcp_service_accounts"
 
 INSTALLED_APPS = [
     'drizm_django_commons',  # manage.py overrides
-    'TimeManagerBackend.application.CustomAdmin',  # default admin
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
