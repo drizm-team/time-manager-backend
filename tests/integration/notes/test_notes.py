@@ -6,7 +6,7 @@ from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
 from TimeManagerBackend.apps.notes.models import Note
-from ..conftest import create_test_user, TEST_USER_PASSWORD
+from ...conftest import create_test_user, TEST_USER_PASSWORD
 
 
 class TestNotes(APITestCase):
