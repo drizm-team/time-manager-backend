@@ -16,7 +16,7 @@ services:
       dockerfile: ./docker/firebase.dockerfile
     ports:
       - 4000:4000
-      - 8080:8080
+      - 8090:8090
     environment:
       - ENV_TEST=0
 

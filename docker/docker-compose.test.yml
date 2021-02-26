@@ -8,3 +8,7 @@ services:
   cloud-storage:
     volumes:
       - ./test-gcs-data:/data
+
+  database:
+    volumes:
+      - ./test-postgres-data:/var/lib/postgresql/data:rw

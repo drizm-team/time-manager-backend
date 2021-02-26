@@ -12,6 +12,6 @@ services:
       - firebase
       - cloud-storage
     environment:
-      - DJANGO_SETTINGS_MODULE=BauerDude.settings.development
+      - DJANGO_SETTINGS_MODULE=TimeManagerBackend.settings.development
       - DJANGO_AUTO_SETUP=1
       - DJANGO_DB_HOST=database
