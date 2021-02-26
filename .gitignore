@@ -2,7 +2,6 @@
 .idea
 venv
 *.env
-.run
 keys
 TimeManagerBackend/settings/keys.py
 .firebasekey
