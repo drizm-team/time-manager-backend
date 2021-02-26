@@ -77,7 +77,8 @@ class Image(models.Model):
             file = self.image.file  # File wrapper object
 
             if hasattr(file.file, "getvalue"):
-                file_content = file.file.getvalue()  # file.file is underlying BytesIO file
+                # file.file is underlying BytesIO file
+                file_content = file.file.getvalue()
             else:
                 # it may also be a SpooledTemporaryFile,
                 # in that case the actual BytesIO object is nested a level deeper
@@ -92,7 +93,8 @@ class Image(models.Model):
 
         if not creating:
             try:
-                # This instance may have already been created but still not have an image
+                # This instance may have already been created
+                # but still not have an image associated with it
                 # in that case the below code would break so we need to check,
                 # if an image file has already been added to the instance
                 hasattr(self.image, "file")

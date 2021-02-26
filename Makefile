@@ -24,7 +24,7 @@ requirements:
 	@poetry export --dev --without-hashes -f requirements.txt > requirements.txt
 
 .PHONY: deploy_initial
-deploy_start:
+deploy_initial:
 	@(exec ./scripts/deploy.sh --initial)
 
 .PHONY: deploy_update
