@@ -2,12 +2,14 @@ import random
 import string
 
 from django.conf import settings
+from django.core.files.storage import get_storage_class
 from drizm_commons.google.testing import TestStorageBucket
 from drizm_commons.testing.truthiness import all_keys_present, uri_is_http
 from google.cloud import exceptions
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
+from storages.backends.gcloud import GoogleCloudStorage
 
 from TimeManagerBackend.settings.production import terraform
 from ..conftest import (
@@ -23,15 +25,21 @@ from django.contrib.auth import get_user_model
 
 
 class TestUsers(APITestCase):
-    def setUp(self) -> None:
-        self.user = create_test_user()
-        self.user_pw = TEST_USER_PASSWORD
+    @classmethod
+    def setUpClass(cls):
+        cls.user = create_test_user()
+        cls.user_pw = TEST_USER_PASSWORD
 
         app_base = "users:user-%s"
-        self.list = app_base % "list"
-        self.detail = app_base % "detail"
-        self.change_password = app_base % "change-password"
-        self.change_email = app_base % "change-email"
+        cls.list = app_base % "list"
+        cls.detail = app_base % "detail"
+        cls.change_password = app_base % "change-password"
+        cls.change_email = app_base % "change-email"
+
+        cls._storage: GoogleCloudStorage = get_storage_class()
+        cls.storage = cls._storage.client
+
+        super().setUpClass()
 
     # noinspection PyMethodMayBeStatic
     def _test_response_body(self, body: dict):
@@ -194,17 +202,6 @@ class TestUsers(APITestCase):
         """
         url = reverse(self.list)
 
-        # Create a testing storage bucket
-        cl = TestStorageBucket(
-            settings.GS_CREDENTIALS,
-            terraform.vars.project_name,
-            bucket_name=settings.GS_BUCKET_NAME
-        )
-        try:
-            cl.create()
-        except exceptions.Conflict:
-            cl.create(obtain_existing=True)
-
         # Create a test image
         image_file = generate_test_image("jpeg")
         b64_image = generate_image_b64(image_file)
@@ -244,9 +241,6 @@ class TestUsers(APITestCase):
             }
         })
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-        # Remove the testing bucket
-        cl.destroy()
 
     def test050_update_general(self):
         """
