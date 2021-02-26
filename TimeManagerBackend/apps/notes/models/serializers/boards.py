@@ -22,13 +22,7 @@ class Board(serializers.Serializer):  # noqa
     # groups
 
     class Meta:
-        self_view = "notes:note-boards-detail"
-
-    def validate(self, attrs: dict):
-        # The owner cannot be a member at the same time
-        owner, members = attrs.get("owner"), attrs.get("members")
-        if owner in members:
-            raise serializers.ValidationError
+        self_view = "notes:boards-detail"
 
 
 class BoardListMixin:
@@ -59,19 +53,20 @@ class NotesBoardCreateSerializer(BoardListMixin, Board):  # noqa
         queryset=get_user_model().objects.all(),
         allow_empty=True
     )
-
-    class Meta:
-        field_kwargs = {
-            "owner": {
-                "default": serializers.CurrentUserDefault(),
-                "read_only": True
-            },
-        }
+    owner = UserSerializer(
+        default=serializers.CurrentUserDefault()
+    )
 
     def create(self, validated_data):
         from ..models import NotesBoard
+        members = validated_data.pop("members", [])
+        members += [validated_data.get("owner")]
 
-        return NotesBoard.objects.create(**validated_data)
+        board = NotesBoard.objects.create(**validated_data)
+        board.members.set(members)
+        board.save()
+
+        return board
 
 
 class NotesBoardListSerializer(BoardListMixin, Board):  # noqa

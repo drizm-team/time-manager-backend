@@ -1,5 +1,5 @@
 from rest_framework.test import APITestCase
-from ...conftest import create_test_user, TEST_USER_PASSWORD
+from ...conftest import create_test_user, TEST_USER_PASSWORD, self_to_id
 from rest_framework.reverse import reverse
 from functools import partial
 from rest_framework import status
@@ -41,5 +41,8 @@ class TestNotesBoards(APITestCase):
         res = request()
         content = res.json()
         self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(content.get("owner"), self.user.pk)
+        self.assertEqual(
+            self_to_id(content.get("owner")),
+            self.user.pk
+        )
         self.assertIn(self.user.pk, content.get("members"))

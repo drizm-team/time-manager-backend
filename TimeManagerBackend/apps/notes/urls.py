@@ -9,3 +9,4 @@ router = SimpleRouter()
 router.register(r"boards", NotesBoardViewSet, "boards")
 
 urlpatterns = []
+urlpatterns += router.urls
