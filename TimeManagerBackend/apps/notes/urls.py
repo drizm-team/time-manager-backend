@@ -1,11 +1,11 @@
-from django.urls import path
+from rest_framework.routers import SimpleRouter
 
 from .apps import CoreConfig as CurrentApp
-from .views import notes_viewset_detail, notes_viewset_list
+from .views import NotesBoardViewSet
 
 app_name = CurrentApp.name
 
-urlpatterns = [
-    path("", notes_viewset_list, name="note-list"),
-    path("<str:pk>/", notes_viewset_detail, name="note-detail")
-]
+router = SimpleRouter()
+router.register(r"boards", NotesBoardViewSet, "boards")
+
+urlpatterns = []

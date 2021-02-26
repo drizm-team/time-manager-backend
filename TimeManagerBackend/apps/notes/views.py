@@ -1,113 +1,161 @@
-from django.http import Http404
-from django.utils.decorators import method_decorator
-from drf_yasg.utils import swagger_auto_schema
-from rest_framework import status
-from rest_framework import viewsets, mixins
-from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from rest_framework.settings import api_settings
+from django.db.models import Q
+from django.shortcuts import get_object_or_404
+from rest_framework import viewsets
+from rest_framework.request import Request
+from rest_framework.views import APIView
 
-from .models import Note
-from .models.serializers import (
-    NotesSerializer,
-    NotesResponseSchema,
-    NotesRequestSchema
-)
+from .models import NotesBoard, NotesGroup
+from .models.serializers import boards, groups, notes
+from ...lib.commons.mixins import SerializerContextMixin
+from ...lib.viewsets import PatchUpdateModelViewSet
 
 
-@method_decorator(
-    name="list", decorator=swagger_auto_schema(
-        operation_summary="List all created Notes",
-        responses={
-            status.HTTP_200_OK: NotesResponseSchema(many=True)
-        }
-    )
-)
-@method_decorator(
-    name="retrieve", decorator=swagger_auto_schema(
-        operation_summary="Retrieve singular Note",
-        responses={
-            status.HTTP_200_OK: NotesResponseSchema()
-        }
-    )
-)
-@method_decorator(
-    name="destroy", decorator=swagger_auto_schema(
-        operation_summary="Delete Note"
-    )
-)
-class NotesViewSet(mixins.DestroyModelMixin,
-                   mixins.ListModelMixin,
-                   mixins.RetrieveModelMixin,
-                   viewsets.GenericViewSet):
-    serializer_class = NotesSerializer
-    permission_classes = [IsAuthenticated]
-
+# /boards/
+# /boards/:id/
+class NotesBoardViewSet(PatchUpdateModelViewSet):
     def get_queryset(self):
+        """ Only allow users to 'see' boards they are a part of. """
         if getattr(self, 'swagger_fake_view', False):
-            # queryset just for schema generation metadata
-            return Note.objects.none()
+            return NotesBoard.objects.none()
 
-        return Note.objects.filter(creator=self.request.user)
+        return NotesBoard.objects.filter(
+            Q(owner=self.request.user) |
+            Q(members__in=self.request.user)
+        ).prefetch_related("owner")
 
-    @swagger_auto_schema(
-        operation_summary="Overwrite Note",
-        operation_description="Overwrite a note object, "
-                              "does not check whether the object "
-                              "exists or not, so can be used "
-                              "for both create and update.",
-        responses={
-            status.HTTP_200_OK: NotesResponseSchema(),
-            status.HTTP_400_BAD_REQUEST: "Validation failed",
-            status.HTTP_403_FORBIDDEN: "Note already exists but this user "
-                                       "does not have permissions to edit it"
-        },
-        request_body=NotesRequestSchema
-    )
-    def update(self, request, *args, **kwargs):
-        # Build the dataset required to construct the note
-        pk = kwargs.get("pk")
-        data = request.data
-        data["id"] = pk
+    def get_serializer_class(self):
+        """
+        Select different serializers for:
 
-        # Attempt to obtain the object but not from a subset
-        # This is to handle the case where a user overwrites
-        # an object created by another user that would not get
-        # handled by this view by default because the queryset is scoped
-        note = Note.objects.filter(pk=pk)
-        if note:
-            if note[0].creator != request.user:
-                raise PermissionDenied
-        try:
-            o = self.get_object()
-            serializer = self.get_serializer(o, data=data, partial=False)
-        except Http404:
-            serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data,
-            status=status.HTTP_200_OK,
-            headers=headers
+        - LIST
+        - CREATE
+        - DETAIL
+        """
+        if self.action == "list":
+            return boards.NotesBoardListSerializer
+        elif self.action == "create":
+            return boards.NotesBoardCreateSerializer
+
+        return boards.NotesBoardDetailSerializer
+
+    def check_object_permissions(self, request, obj):
+        """ Only allow owners to UPDATE or DESTROY a board. """
+        if self.action in ("update", "destroy"):
+            if self.request.user != obj.owner:
+                self.permission_denied(
+                    request,
+                    message=(
+                        "Only the board owner may perform this action."
+                    )
+                )
+
+
+# /boards/:id/members/
+class BoardMembersViewSet(APIView):
+    def get_referred_obj(self, req, pk):
+        board = get_object_or_404(NotesBoard, id=pk)
+
+        if board.owner != self.request.user.pk:
+            self.permission_denied(
+                req,
+                message=(
+                    "Only the board owner may perform this action."
+                )
+            )
+
+        return board
+
+    def put(self, request: Request, boards_pk):
+        board = self.get_referred_obj(request, boards_pk)
+        member_union = set(
+            NotesBoard.objects.filter(pk=board.pk).values_list(
+                "members__id", flat=True
+            )
+        )
+        member_union.add(request.data.get("user"))
+        board.members = list(member_union)
+        board.save()
+        return member_union
+
+    def delete(self, request: Request, boards_pk):
+        board = self.get_referred_obj(request, boards_pk)
+        member_union = set(
+            NotesBoard.objects.filter(pk=board.pk).values_list(
+                "members__id", flat=True
+            )
+        )
+        member_union.discard(request.data.get("user"))
+        board.members = list(member_union)
+        board.save()
+        return member_union
+
+
+# /boards/:id/notes/:id/
+class BoardNotesViewSet(SerializerContextMixin, APIView):
+    serializer_class = notes.BoardNotesSerializer
+
+    def put(self, request, board_pk, pk):
+        pass
+
+    def delete(self, request, board_pk, pk):
+        pass
+
+
+# /boards/:id/groups/
+# /boards/:id/groups/:id/
+class NotesGroupViewSet(viewsets.ModelViewSet):
+    def get_queryset(self):
+        """
+        Only allow users to 'see' groups that are
+        a part of a board that the user is a part of.
+        """
+        if getattr(self, 'swagger_fake_view', False):
+            return NotesGroup.objects.none()
+
+        return NotesGroup.objects.prefetch_related(
+            "parent"
+        ).filter(
+            Q(parent__owner=self.request.user) |
+            Q(parent__members__in=self.request.user)
         )
 
-    # noinspection PyMethodMayBeStatic
-    def get_success_headers(self, data):
-        try:
-            return {'Location': str(
-                data[api_settings.URL_FIELD_NAME]
-            )}
-        except (TypeError, KeyError):
-            return {}
+    def get_serializer_class(self):
+        """ Select a different serializer for LIST and DETAIL. """
+        if self.action in ("list", "create"):
+            return groups.NotesGroupListSerializer
+
+        return groups.NotesGroupDetailSerializer
+
+    def get_object(self):
+        """ Returns the object the view is displaying. """
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+
+        assert lookup_url_kwarg in self.kwargs, (
+            'Expected view %s to be called with a URL keyword argument '
+            'named "%s". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.' %
+            (self.__class__.__name__, lookup_url_kwarg)
+        )
+
+        filter_kwargs = {
+            "board_pk": self.kwargs["board_pk"],
+            self.lookup_field: self.kwargs[lookup_url_kwarg]
+        }
+        obj = get_object_or_404(self.get_queryset(), **filter_kwargs)
+
+        # May raise a permission denied
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
 
-notes_viewset_list = NotesViewSet.as_view({
-    "get": "list"
-})
-notes_viewset_detail = NotesViewSet.as_view({
-    "get": "retrieve",
-    "put": "update",
-    "delete": "destroy"
-})
+# /boards/:id/groups/:id/notes/:id/
+class GroupNotesViewSet(SerializerContextMixin, APIView):
+    serializer_class = notes.GroupNotesSerializer
+
+    def put(self, request, board_pk, group_pk, pk):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+    def delete(self, request, board_pk, group_pk, pk):
+        pass
