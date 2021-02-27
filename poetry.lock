@@ -264,6 +264,18 @@ djangorestframework = ">=3.9.1"
 base64imagefield = ["Pillow (>=6.2.1)"]
 
 [[package]]
+name = "drf-nested-routers"
+version = "0.92.5"
+description = "Nested resources for the Django Rest Framework"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[package.dependencies]
+Django = ">=1.11"
+djangorestframework = ">=3.6.0"
+
+[[package]]
 name = "drf-yasg"
 version = "1.20.0"
 description = "Automated generation of real Swagger/OpenAPI 2.0 schemas from Django Rest Framework code."
@@ -864,7 +876,7 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8, <3.9"
-content-hash = "9eab785441b36ba05c71a7cd9779157b8d387a391cb4373bec919c8f2286c1db"
+content-hash = "e712a3c8d52884da780789dfb33d9a75e96cab8f99f7f202343f4dfdddfbd447"
 
 [metadata.files]
 appdirs = [
@@ -983,6 +995,10 @@ djangorestframework-simplejwt = [
 drf-extra-fields = [
     {file = "drf-extra-fields-3.0.4.tar.gz", hash = "sha256:9deb821013971fac9bd103499d0cf28632b33b9d638025709e2adcd880e077dc"},
     {file = "drf_extra_fields-3.0.4-py3-none-any.whl", hash = "sha256:a7af4f81e8539f6ccab1a4e5ea1c1c6682fb8f6d315b04d8c409d1e5a714b9a7"},
+]
+drf-nested-routers = [
+    {file = "drf-nested-routers-0.92.5.tar.gz", hash = "sha256:9d6a326333e9b16549e63b893c27075d98bbc217cd05fb10bbfa770d728d3f66"},
+    {file = "drf_nested_routers-0.92.5-py2.py3-none-any.whl", hash = "sha256:995b831be036911e330a86b7129dc6589de62f2a53d72067e7ce2b4a90f28c35"},
 ]
 drf-yasg = [
     {file = "drf-yasg-1.20.0.tar.gz", hash = "sha256:d50f197c7f02545d0b736df88c6d5cf874f8fea2507ad85ad7de6ae5bf2d9e5a"},
