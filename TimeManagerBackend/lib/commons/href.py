@@ -184,18 +184,18 @@ class DeferredCollectionField(HrefField):
             lookup_chain, referring_field, **kwargs
         )
 
-        self.queryset_setting = queryset
+        self.queryset_setting = queryset or queryset_source
 
     def evaluate_queryset_length(self, obj, qset=None):
-        q = qset or self.queryset_setting
+        q = self.queryset_setting if qset is None else qset
 
         if isinstance(q, QuerySet):
             length = q.count()
-        elif isinstance(q, Sequence):
-            length = len(q)
         elif isinstance(q, str):
             q = attrgetter(q)(obj)
             return self.evaluate_queryset_length(obj, qset=q)
+        elif isinstance(q, Sequence):
+            length = len(q)
         else:
             raise TypeError("Not a valid Queryset.")
 

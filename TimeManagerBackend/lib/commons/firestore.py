@@ -25,7 +25,9 @@ except ImportError:
 
 @lru_cache
 def get_firestore() -> Client:
-    credentials = Certificate(settings.GS_CREDENTIALS_FILE)
+    credentials = Certificate(
+        str(settings.GS_CREDENTIALS_FILE)
+    )
     db_settings = settings.FIRESTORE_DATABASES["default"]
 
     # Production does not define extra settings
