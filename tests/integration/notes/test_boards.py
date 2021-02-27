@@ -1,8 +1,11 @@
+from typing import Optional
+
 from rest_framework.test import APITestCase
 from ...conftest import create_test_user, TEST_USER_PASSWORD, self_to_id
 from rest_framework.reverse import reverse
 from functools import partial
 from rest_framework import status
+from TimeManagerBackend.apps.notes.boards.models import NotesBoard
 
 
 class TestNotesBoards(APITestCase):
@@ -20,6 +23,15 @@ class TestNotesBoards(APITestCase):
         cls.list = app_list % "list"
         cls.detail = app_list % "detail"
 
+    def _get_create_board_partial(
+            self, url: str, data: Optional[dict] = None
+    ):
+        return partial(
+            self.client.post,
+            url,
+            data or {"title": "Some Board", "members": [self.member.pk]}
+        )
+
     def test010_boards_create(self):
         """
         GIVEN I have a user account
@@ -29,11 +41,7 @@ class TestNotesBoards(APITestCase):
         """
         url = reverse(self.list)
 
-        request = partial(
-            self.client.post,
-            url,
-            {"title": "Some Board", "members": [self.member.pk]}
-        )
+        request = self._get_create_board_partial(url)
         res = request()
         self.assertEqual(res.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -46,3 +54,160 @@ class TestNotesBoards(APITestCase):
             self.user.pk
         )
         self.assertIn(self.user.pk, content.get("members"))
+
+    def test020_boards_retrieve(self):
+        """
+        GIVEN I have a user account
+            AND I am loggged in
+        WHEN I ask to retrieve an existing board
+            AND I am a member or the owner of that board
+        THEN I should be able to retrieve that board
+        """
+        request = self._get_create_board_partial(reverse(self.list))
+        self.client.force_authenticate(user=self.user)
+        content = request().json()
+        board_id = self_to_id(content)
+
+        url = reverse(self.detail, args=(board_id,))
+
+        # The owner should be able to retrieve the board
+        res = self.client.get(url)
+        content = res.json()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        members = content.get("members")
+        self.assertEqual(type(members), list)
+        self.assertGreaterEqual(len(members), 1)
+        # Make sure that members contains the full instances
+        # not just primary keys
+        self.assertEqual(type(members[0]), dict)
+
+        # A member should also be able to retrieve the board
+        self.client.force_authenticate(user=self.member)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        # A user that is neither a member or the owner SHOULD NOT
+        # be able to retrieve the board
+        test_user = create_test_user("iuhguzr@ok.com", "imSickOfTesting123")
+        self.client.force_authenticate(test_user)
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test030_boards_list(self):
+        """
+        GIVEN I have a user account
+            AND I am logged in
+        WHEN I ask to list all boards
+        THEN I should get a list of all boards,
+        that I own or am a member of
+        """
+        url = reverse(self.list)
+
+        request = self._get_create_board_partial(
+            url, {"title": "AnotherBoard"}
+        )
+        self.client.force_authenticate(user=self.user)
+        request()
+
+        # As we are the owner we should be able to see the board
+        res = self.client.get(url)
+        content = res.json()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(type(content), list)
+        self.assertEqual(len(content), 1)
+
+        # Another user should not be able to see any boards
+        self.client.force_authenticate(user=self.member)
+        res = self.client.get(url)
+        content = res.json()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(type(content), list)
+        self.assertEqual(len(content), 0)
+
+    def test040_update(self):
+        """
+        GIVEN I have a user account
+            AND I am logged in
+        WHEN I ask to update a board
+            AND I am the owner of that board
+        THEN I should be able to update that board
+        """
+        request = self._get_create_board_partial(reverse(self.list))
+        self.client.force_authenticate(user=self.user)
+        content = request().json()
+        board_id = self_to_id(content)
+
+        url = reverse(self.detail, args=(board_id,))
+
+        res = self.client.patch(url, {"title": "Changed Board"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        self.client.force_authenticate(user=self.member)
+        res = self.client.patch(url, {"title": "Changed Board"})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test050_delete(self):
+        """
+        GIVEN I have a user account
+            AND I am logged in
+        WHEN I ask to delete a board
+            AND I am the owner of that board
+        THEN I should be able to delete that board
+        """
+        request = self._get_create_board_partial(reverse(self.list))
+        self.client.force_authenticate(user=self.user)
+        content = request().json()
+        board_id = self_to_id(content)
+
+        url = reverse(self.detail, args=(board_id,))
+
+        self.client.force_authenticate(user=self.member)
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.client.force_authenticate(user=self.user)
+        res = self.client.delete(url)
+        self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
+
+class TestBoardMembers(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.user = create_test_user()
+        cls.member = create_test_user("123456a@okay.com", "ihhzotnhoirt")
+
+        cls.list = "notes:boards-members"
+
+        # Create a board for testing
+        cls.board = NotesBoard.objects.create(
+            owner=cls.user, title="Some Testing Board"
+        )
+        cls.board.members.set([cls.user])
+        cls.board.save()
+
+    def test010_add(self):
+        """
+        GIVEN I have a user account
+            AND I am logged in
+        WHEN I ask to add a member to a board
+            AND I am the owner of that board
+        THEN I should be able to add a member to that board
+        """
+        url = reverse(self.list, args=(self.board.pk,))
+
+        self.client.force_authenticate(user=self.user)
+        # Operation is idempodent so nothing should change
+        # if we perform it multiple times
+        for _ in range(2):
+            res = self.client.put(url, {"members": [self.member.pk]})
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+    def test020_remove(self):
+        """
+        GIVEN I have a user account
+            AND I am logged in
+        WHEN I ask to remove a member from a board
+            AND I am the owner of that board
+        THEN I should be able to remove a member from that board
+        """
+        pass
