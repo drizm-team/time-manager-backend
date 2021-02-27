@@ -5,8 +5,8 @@ from TimeManagerBackend.apps.users.models.serializers import UserSerializer
 from TimeManagerBackend.lib.commons.href import (
     SelfHrefField, DeferredCollectionField
 )
-from .groups import NotesGroupListSerializer
-from .notes import BoardNotesSerializer
+from ..groups.serializers import NotesGroupListSerializer
+from ..notes.serializers import BoardNotesSerializer
 
 
 class Board(serializers.Serializer):  # noqa
@@ -25,7 +25,7 @@ class Board(serializers.Serializer):  # noqa
         self_view = "notes:boards-detail"
 
 
-class BoardListMixin:
+class BoardListMixin(serializers.Serializer):  # noqa
     notes = DeferredCollectionField(
         queryset_source="notes",
         view_name="notes:boards-detail",
@@ -34,12 +34,21 @@ class BoardListMixin:
         read_only=True
     )
     groups = DeferredCollectionField(
+        queryset_source="notes",
+        view_name="notes:boards-detail",
+        lookup_field="id", lookup_url_kwarg="pk",
+        referring_field="notes",
+        read_only=True
+    )
+    """
+    groups = DeferredCollectionField(
         queryset_source="groups",
         view_name="notes:boards-detail",
         lookup_field="id", lookup_url_kwarg="pk",
         referring_field="groups",
         read_only=True
     )
+    """
 
 
 class BoardDetailMixin:
@@ -47,11 +56,13 @@ class BoardDetailMixin:
     groups = NotesGroupListSerializer(many=True, read_only=True)
 
 
+# POST
 class NotesBoardCreateSerializer(BoardListMixin, Board):  # noqa
     members = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=get_user_model().objects.all(),
-        allow_empty=True
+        allow_empty=True,
+        required=False
     )
     owner = UserSerializer(
         default=serializers.CurrentUserDefault()
@@ -69,8 +80,10 @@ class NotesBoardCreateSerializer(BoardListMixin, Board):  # noqa
         return board
 
 
+# GET LIST
 class NotesBoardListSerializer(BoardListMixin, Board):  # noqa
     class Meta:
+        self_view = "notes:boards-detail"
         field_kwargs = {
             "members": {
                 "many": True,
@@ -79,14 +92,11 @@ class NotesBoardListSerializer(BoardListMixin, Board):  # noqa
         }
 
 
+# GET DETAIL
+# PATCH
+# (DELETE)
 class NotesBoardDetailSerializer(BoardDetailMixin, Board):  # noqa
-    class Meta:
-        field_kwargs = {
-            "members": {
-                "many": True,
-                "read_only": True
-            }
-        }
+    members = UserSerializer(many=True, read_only=True)
 
     def update(self, instance, validated_data):
         if v := validated_data.get("title"):
@@ -96,6 +106,10 @@ class NotesBoardDetailSerializer(BoardDetailMixin, Board):  # noqa
 
         instance.save()
         return instance
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return data
 
 
 __all__ = [
