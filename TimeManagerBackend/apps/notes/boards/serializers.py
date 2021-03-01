@@ -112,8 +112,15 @@ class NotesBoardDetailSerializer(BoardDetailMixin, Board):  # noqa
         return data
 
 
+class NotesBoardMembersSerializer(serializers.Serializer):  # noqa
+    members = serializers.PrimaryKeyRelatedField(
+        queryset=get_user_model().objects.all(), required=True, many=True
+    )
+
+
 __all__ = [
     "NotesBoardCreateSerializer",
     "NotesBoardListSerializer",
-    "NotesBoardDetailSerializer"
+    "NotesBoardDetailSerializer",
+    "NotesBoardMembersSerializer"
 ]

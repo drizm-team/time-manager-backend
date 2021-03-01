@@ -64,17 +64,14 @@ class BoardMembersView(APIView):
 
         return board
 
-    def put(self, request: Request, boards_pk):
-        board = self.get_referred_obj(request, boards_pk)
-        member_union = set(
-            NotesBoard.objects.filter(pk=board.pk).values_list(
-                "members__id", flat=True
-            )
+    def get_members(self):
+        serializer = serializers.NotesBoardMembersSerializer(
+            data=self.request.data, context={"request": self.request}
         )
-        new_members = request.data.get("members")
-        member_union.union(new_members)
-        board.members.set(list(member_union))
-        board.save()
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data.get("members")
+
+    def get_response(self, board):
         serializer = UserSerializer(
             board.members, many=True, context={"request": self.request}
         )
@@ -83,14 +80,25 @@ class BoardMembersView(APIView):
             status=status.HTTP_200_OK
         )
 
+    def put(self, request: Request, boards_pk):
+        board = self.get_referred_obj(request, boards_pk)
+        members = self.get_members()
+
+        for member in members:
+            board.members.add(member)
+        board.save()
+        return self.get_response(board)
+
     def delete(self, request: Request, boards_pk):
         board = self.get_referred_obj(request, boards_pk)
-        member_union = set(
-            NotesBoard.objects.filter(pk=board.pk).values_list(
-                "members__id", flat=True
+        members = self.get_members()
+
+        if board.owner in members:
+            self.permission_denied(
+                request, message="The board owner cannot be removed."
             )
-        )
-        member_union.discard(request.data.get("user"))
-        board.members = list(member_union)
+
+        for member in members:
+            board.members.remove(member)
         board.save()
-        return member_union
+        return self.get_response(board)

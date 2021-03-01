@@ -185,6 +185,8 @@ class TestBoardMembers(APITestCase):
         cls.board.members.set([cls.user])
         cls.board.save()
 
+        cls.url = reverse(cls.list, args=(cls.board.pk,))
+
     def test010_add(self):
         """
         GIVEN I have a user account
@@ -193,14 +195,15 @@ class TestBoardMembers(APITestCase):
             AND I am the owner of that board
         THEN I should be able to add a member to that board
         """
-        url = reverse(self.list, args=(self.board.pk,))
-
         self.client.force_authenticate(user=self.user)
-        # Operation is idempodent so nothing should change
+        # Operation is idempotent so nothing should change
         # if we perform it multiple times
         for _ in range(2):
-            res = self.client.put(url, {"members": [self.member.pk]})
+            res = self.client.put(self.url, {"members": [self.member.pk]})
+            members = res.json().get("members")
             self.assertEqual(res.status_code, status.HTTP_200_OK)
+            self.assertEqual(type(members), list)
+            self.assertEqual(len(members), 2)
 
     def test020_remove(self):
         """
@@ -210,4 +213,16 @@ class TestBoardMembers(APITestCase):
             AND I am the owner of that board
         THEN I should be able to remove a member from that board
         """
-        pass
+        self.client.force_authenticate(user=self.user)
+        # Operation is idempotent so nothing should change
+        # if we perform it multiple times
+        for _ in range(2):
+            res = self.client.delete(self.url, {"members": [self.member.pk]})
+            members = res.json().get("members")
+            self.assertEqual(res.status_code, status.HTTP_200_OK)
+            self.assertEqual(type(members), list)
+            self.assertEqual(len(members), 1)
+
+        # Make sure we cannot remove the owner
+        res = self.client.delete(self.url, {"members": [self.user.pk]})
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
