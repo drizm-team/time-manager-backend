@@ -4,14 +4,27 @@ from rest_framework import serializers
 from TimeManagerBackend.lib.commons.href import (
     SelfHrefField, DeferredCollectionField
 )
+from .models import NotesGroup
+from ..boards.models import NotesBoard
+from ..notes.serializers import GroupNotesSerializer
 
 
+# POST
+# GET LIST
 class NotesGroupListSerializer(serializers.Serializer):  # noqa
-    self = SelfHrefField()
+    self = SelfHrefField(
+        view_name="notes:groups-detail",
+        lookup_chain={"boards_pk": "parent.pk"}
+    )
 
-    title = serializers.CharField()
-    color = HexColorField()
+    title = serializers.CharField(required=True)
+    color = HexColorField(required=True)
 
+    parent = serializers.PrimaryKeyRelatedField(
+        queryset=NotesBoard.objects.all(),
+        write_only=True,
+        required=True
+    )
     notes = DeferredCollectionField(
         queryset_source="notes",
         view_name="notes:boards-detail",
@@ -19,13 +32,12 @@ class NotesGroupListSerializer(serializers.Serializer):  # noqa
         read_only=True
     )
 
-    class Meta:
-        self_view = "notes:board-groups-detail"
+    def create(self, validated_data):
+        return NotesGroup.objects.create(**validated_data)
 
 
 class NotesGroupDetailSerializer(NotesGroupListSerializer):  # noqa
-    # notes = GroupNotesSerializer(many=True)
-    pass
+    notes = GroupNotesSerializer(many=True)
 
 
 __all__ = ["NotesGroupListSerializer", "NotesGroupDetailSerializer"]
