@@ -4,7 +4,7 @@ from typing import Union, Sequence, List, Dict, Optional, Any, Callable
 from urllib.parse import quote_plus, urljoin
 
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Manager
 from django.urls import NoReverseMatch
 from drf_yasg import openapi
 from rest_framework import serializers
@@ -125,7 +125,10 @@ class HrefField(serializers.HyperlinkedIdentityField):
 
 class SelfHrefField(HrefField):
     def __init__(
-        self, view_name: str = "nil", lookup_chain=None, referring_field=None, **kwargs
+        self, view_name: str = "nil",
+            lookup_chain=None,
+            referring_field=None,
+            **kwargs
     ) -> None:
         kwargs["view_name"] = view_name
         super(SelfHrefField, self).__init__(lookup_chain, referring_field, **kwargs)
@@ -196,6 +199,10 @@ class DeferredCollectionField(HrefField):
             return self.evaluate_queryset_length(obj, qset=q)
         elif isinstance(q, Sequence):
             length = len(q)
+        elif isinstance(q, Manager):
+            # This is the case for reverse accessors,
+            # as would be the case with "related_name"
+            length = q.count()
         else:
             raise TypeError("Not a valid Queryset.")
 
