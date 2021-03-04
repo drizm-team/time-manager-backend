@@ -34,21 +34,12 @@ class BoardListMixin(serializers.Serializer):  # noqa
         read_only=True
     )
     groups = DeferredCollectionField(
-        queryset_source="notes",
-        view_name="notes:boards-detail",
-        lookup_field="id", lookup_url_kwarg="pk",
-        referring_field="notes",
-        read_only=True
-    )
-    """
-    groups = DeferredCollectionField(
         queryset_source="groups",
         view_name="notes:boards-detail",
         lookup_field="id", lookup_url_kwarg="pk",
         referring_field="groups",
         read_only=True
     )
-    """
 
 
 class BoardDetailMixin:
