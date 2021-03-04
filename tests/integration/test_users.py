@@ -1,17 +1,14 @@
 import random
 import string
 
-from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.core.files.storage import get_storage_class
-from drizm_commons.google.testing import TestStorageBucket
 from drizm_commons.testing.truthiness import all_keys_present, uri_is_http
-from google.cloud import exceptions
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 from storages.backends.gcloud import GoogleCloudStorage
 
-from TimeManagerBackend.settings.production import terraform
 from ..conftest import (
     create_test_user,
     TEST_USER_PASSWORD,
@@ -21,15 +18,11 @@ from ..conftest import (
     random_hex_color
 )
 from ..data.b64 import IMG
-from django.contrib.auth import get_user_model
 
 
 class TestUsers(APITestCase):
     @classmethod
     def setUpClass(cls):
-        cls.user = create_test_user()
-        cls.user_pw = TEST_USER_PASSWORD
-
         app_base = "users:user-%s"
         cls.list = app_base % "list"
         cls.detail = app_base % "detail"
@@ -40,6 +33,10 @@ class TestUsers(APITestCase):
         cls.storage = cls._storage.client
 
         super().setUpClass()
+
+    def setUp(self) -> None:
+        self.user = create_test_user()
+        self.user_pw = TEST_USER_PASSWORD
 
     # noinspection PyMethodMayBeStatic
     def _test_response_body(self, body: dict):

@@ -1,27 +1,30 @@
+from functools import partial
 from typing import Optional
 
-from rest_framework.test import APITestCase
-from ...conftest import create_test_user, TEST_USER_PASSWORD, self_to_id
-from rest_framework.reverse import reverse
-from functools import partial
 from rest_framework import status
+from rest_framework.reverse import reverse
+from rest_framework.test import APITestCase
+
 from TimeManagerBackend.apps.notes.boards.models import NotesBoard
+from ...conftest import create_test_user, self_to_id
 
 
 class TestNotesBoards(APITestCase):
     @classmethod
-    def setUpTestData(cls):
-        cls.user = create_test_user()
-        cls.user_pw = TEST_USER_PASSWORD
-
-        cls.member_pw = "literallyAnything55"
-        cls.member = create_test_user(
-            "someguy@reddit.com", cls.member_pw
-        )
-
+    def setUpClass(cls):
         app_list = "notes:boards-%s"
         cls.list = app_list % "list"
         cls.detail = app_list % "detail"
+
+        super().setUpClass()
+
+    def setUp(self) -> None:
+        self.user = create_test_user()
+
+        self.member_pw = "literallyAnything55"
+        self.member = create_test_user(
+            "someguy@reddit.com", self.member_pw
+        )
 
     def _get_create_board_partial(
             self, url: str, data: Optional[dict] = None
@@ -32,7 +35,7 @@ class TestNotesBoards(APITestCase):
             data or {"title": "Some Board", "members": [self.member.pk]}
         )
 
-    def test010_boards_create(self):
+    def test010_create(self):
         """
         GIVEN I have a user account
             AND I am logged in
@@ -55,7 +58,7 @@ class TestNotesBoards(APITestCase):
         )
         self.assertIn(self.user.pk, content.get("members"))
 
-    def test020_boards_retrieve(self):
+    def test020_retrieve(self):
         """
         GIVEN I have a user account
             AND I am loggged in
@@ -93,7 +96,7 @@ class TestNotesBoards(APITestCase):
         res = self.client.get(url)
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test030_boards_list(self):
+    def test030_list(self):
         """
         GIVEN I have a user account
             AND I am logged in
