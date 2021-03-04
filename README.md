@@ -39,6 +39,7 @@ through the exodia service account.
 - ./keys/
 - ./TimeManagerBackend/settings/keys.py
 - ./.terraform/terraform.tfvars
+- ./.firebasekey
 
 #### keys folder Contents
 
@@ -77,21 +78,12 @@ Once everything is done, simply run:
 ``cd docker``  
 ``docker-compose up --build``
 
-#### Firebase Initialization
+#### .firebasekey Contents
 
-This project uses the Firebase CLI
-and runs on the emulator suite of
-Firebase.
-
-As such you need to ensure you have
-the Firebase CLI installed and setup.
-
-Then run ``firebase emulators init``
-and select the **time-manager**
-project, to finish the setup.
-
-Afterwards you are ready to deploy
-or test the project.
+For this you simply need to run
+``firebase login:ci``.
+You then copy the resulting key
+into the ``.firebasekey`` file.
 
 ## Deployment
 
