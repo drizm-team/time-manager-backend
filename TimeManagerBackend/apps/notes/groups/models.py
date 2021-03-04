@@ -1,5 +1,7 @@
 from django.db import models
 
+from TimeManagerBackend.lib.commons.firestore import get_firestore
+
 
 class NotesGroup(models.Model):
     title = models.CharField(max_length=50)
@@ -10,12 +12,19 @@ class NotesGroup(models.Model):
         on_delete=models.CASCADE,
         related_name="groups"
     )
-    # notes - on manager side
 
     class Meta:
         indexes = [
             models.Index(fields=["parent"])
         ]
+
+    @property
+    def notes(self):
+        db = get_firestore()
+        col_ref = db.collection(
+            "notes__boards", str(self.parent.pk), "groups", str(self.pk), "notes"
+        )
+        return list(col_ref.list_documents())  # resolve the iterator
 
 
 __all__ = ["NotesGroup"]
