@@ -21,8 +21,8 @@ RUN apt-get -y autoremove \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /application/BauerDude/
-COPY ["BauerDude", "./"]
+WORKDIR /application/TimeManagerBackend/
+COPY ["TimeManagerBackend", "./"]
 
 # Set envvars
 ENV NGINX_HOST localhost
@@ -30,6 +30,9 @@ ENV NGINX_PORT 8080
 
 WORKDIR /application/keys/
 COPY ./keys .
+
+WORKDIR /application/.terraform/
+COPY ./.terraform .
 
 WORKDIR /application/
 

@@ -74,10 +74,6 @@ Example Syntax:
 key = "string-value"
 key2 = "another-string-value"
 
-Once everything is done, simply run:  
-``cd docker``  
-``docker-compose up --build``
-
 #### .firebasekey Contents
 
 For this you simply need to run
@@ -85,9 +81,30 @@ For this you simply need to run
 You then copy the resulting key
 into the ``.firebasekey`` file.
 
-## Deployment
+### Local Deployment
 
-### Prerequsites
+Run the following commands:
+```bash
+cd docker
+mkdir -p gcs-data/test
+docker-compose -p timemanagerbackend \
+    -f docker-compose.yml \
+    -f docker-compose.vols.yml \
+    -f docker-compose.srv.yml \
+    up
+```
+
+To later remove the services, as well
+as all the test data, simply run:
+```bash
+docker-compose -p "timemanagerbackend" \
+  down --volumes
+)
+```
+
+### Remote Deployment
+
+#### Prerequsites
 
 - Gsutil, Gcloud, CloudSDK
 - CloudSQL Proxy
@@ -95,6 +112,8 @@ into the ``.firebasekey`` file.
 - Tfenv (Terraform)
 - Access to GCP project via CLI
 - Auth credentials for project in CLI
+
+#### Running
 
 For initial deployment:  
 ``make deploy_initial``  
@@ -105,8 +124,3 @@ For refresh deployments:
 To completely reset and
 update a deployment:  
 ``make deploy_reset``
-
-## Documentation
-
-Setting for keys-folder:  
-GCP_CREDENTIALS = Path
