@@ -76,12 +76,20 @@ key2 = "another-string-value"
 
 #### .firebasekey Contents
 
+Remember to select the correct project
+here, it is already listed in the
+``.firebaserc`` file.
+
 For this you simply need to run
 ``firebase login:ci``.
 You then copy the resulting key
 into the ``.firebasekey`` file.
 
 ### Local Deployment
+
+If you are using Chrome, you will
+need to enable the following flag:  
+``chrome://flags/#allow-insecure-localhost``
 
 Run the following commands:
 ```bash
