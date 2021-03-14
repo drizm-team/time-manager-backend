@@ -24,4 +24,3 @@ services:
     image: fsouza/fake-gcs-server
     ports:
       - 4443:4443
-    network_mode: host

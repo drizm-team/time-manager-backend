@@ -21,13 +21,23 @@ for location in "${locations[@]}"; do
   chown -R root:www-data "$location"
 done
 
-# Configure user and group for uwsgi to run on
+# Create the user and group that uwsgi will run on
+# Only create the user if it does not already exist
 uwsgi_user="uwsgi-django"
-useradd -G www-data --system --no-create-home "$uwsgi_user"
+id -u "$uwsgi_user" &> /dev/null || \
+  useradd -G www-data --system --no-create-home "$uwsgi_user"
 
 if [ "${DJANGO_AUTO_SETUP:-0}" == 1 ]; then
+  echo 'Waiting for Service Startup.'
+  sleep 5  # we need to wait for the db to start up
   python manage.py migrate --noinput
-  python manage.py collectstatic --noinput
+
+  if [[ "$DJANGO_SETTINGS_MODULE" == *development ]]; then
+    echo 'Running in Development-Mode, configuring static-file collection.'
+    export STATIC_CUSTOM_COLLECTION_ENDPOINT="https://cloud-storage:4443"
+    python manage.py collectstatic --noinput
+    unset STATIC_CUSTOM_COLLECTION_ENDPOINT
+  fi
 fi
 
 python -m pip install uwsgi  # for some reason we need to install this again

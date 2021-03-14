@@ -1,4 +1,5 @@
 import uuid
+import os
 
 from google.auth.credentials import AnonymousCredentials
 
@@ -58,7 +59,9 @@ DEFAULT_FILE_STORAGE = 'TimeManagerBackend.lib.commons.gcs.EmulatedGCS'
 # Save all 'collectstatic' files to GCS
 STATICFILES_STORAGE = 'TimeManagerBackend.lib.commons.gcs.EmulatedGCS'
 
-GS_CUSTOM_ENDPOINT = "https://localhost:4443"
+GS_CUSTOM_ENDPOINT = os.environ.get(
+    "STATIC_CUSTOM_COLLECTION_ENDPOINT", "https://localhost:4443"
+)
 GS_CREDENTIALS = AnonymousCredentials()
 GS_PROJECT_ID = "test"
 GS_BUCKET_NAME = "test"
