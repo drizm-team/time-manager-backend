@@ -36,7 +36,7 @@ COPY ./.terraform .
 
 WORKDIR /application/
 
-# Download tini
+# Download statically linked tini
 ENV TINI_VERSION v0.19.0
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /tini
 RUN chmod +x /tini
@@ -47,7 +47,9 @@ COPY server/uwsgi.ini /
 COPY docker/docker-entrypoint.sh /
 RUN chmod +x /docker-entrypoint.sh
 
+# Wrap the default entrypoint in tini to get a proper PID 1 process
 ENTRYPOINT ["/tini", "--", "/docker-entrypoint.sh"]
 
+# Start the nginx process
 CMD ["nginx", "-g", "daemon off;"]
 EXPOSE ${NGINX_PORT}
