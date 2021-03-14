@@ -40,6 +40,9 @@ if [ "${DJANGO_AUTO_SETUP:-0}" == 1 ]; then
   fi
 fi
 
-python -m pip install uwsgi  # for some reason we need to install this again
-uwsgi /uwsgi.ini --uid "$(id -u $uwsgi_user)" --gid "$(id -g $uwsgi_user)" &
+# for some reason we need to install this again
+python -m pip install uwsgi > /dev/null 2>&1
+uwsgi /uwsgi.ini \
+  --uid "$(id -u $uwsgi_user)" \
+  --gid "$(id -g $uwsgi_user)" & disown
 exec "$@"
