@@ -53,3 +53,6 @@ ENTRYPOINT ["/tini", "--", "/docker-entrypoint.sh"]
 # Start the nginx process
 CMD ["nginx", "-g", "daemon off;"]
 EXPOSE ${NGINX_PORT}
+# Expose service ports for gRPC connection
+EXPOSE 8090/tcp
+EXPOSE 9090/tcp
