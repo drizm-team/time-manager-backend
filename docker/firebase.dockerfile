@@ -16,4 +16,4 @@ USER node
 
 ENTRYPOINT ["/tini", "--"]
 CMD ["/firebase-entrypoint.sh"]
-EXPOSE 4000 8080
+EXPOSE 4000 8080/tcp 8090/tcp 9090/tcp

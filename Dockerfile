@@ -54,5 +54,4 @@ ENTRYPOINT ["/tini", "--", "/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
 EXPOSE ${NGINX_PORT}
 # Expose service ports for gRPC connection
-EXPOSE 8090/tcp
-EXPOSE 9090/tcp
+EXPOSE 8090/tcp 9090/tcp
