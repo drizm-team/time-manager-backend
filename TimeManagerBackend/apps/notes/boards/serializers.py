@@ -42,7 +42,7 @@ class BoardListMixin(serializers.Serializer):  # noqa
     )
 
 
-class BoardDetailMixin:
+class BoardDetailMixin(serializers.Serializer):  # noqa
     notes = BoardNotesSerializer(many=True, read_only=True)
     groups = NotesGroupListSerializer(many=True, read_only=True)
 
