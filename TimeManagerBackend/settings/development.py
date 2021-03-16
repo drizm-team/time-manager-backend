@@ -21,7 +21,7 @@ DATABASES = {
 
 FIRESTORE_DATABASES = {
     'default': {
-        'HOST': 'localhost',
+        'HOST': 'firebase',
         'PORT': '8090',
     }
 }
