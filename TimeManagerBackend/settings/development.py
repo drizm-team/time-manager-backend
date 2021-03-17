@@ -21,7 +21,7 @@ DATABASES = {
 
 FIRESTORE_DATABASES = {
     'default': {
-        'HOST': 'firebase',
+        'HOST': os.getenv('FIREBASE_DB_HOST', 'firebase'),
         'PORT': '8090',
     }
 }
