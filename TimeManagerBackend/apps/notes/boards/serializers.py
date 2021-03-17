@@ -48,7 +48,7 @@ class BoardDetailMixin(serializers.Serializer):  # noqa
 
 
 # POST
-class NotesBoardCreateSerializer(BoardListMixin, Board):  # noqa
+class NotesBoardCreateSerializer(BoardDetailMixin, Board):  # noqa
     members = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=get_user_model().objects.all(),

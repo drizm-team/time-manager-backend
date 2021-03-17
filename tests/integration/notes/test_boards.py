@@ -56,7 +56,9 @@ class TestNotesBoards(APITestCase):
             self_to_id(content.get("owner")),
             self.user.pk
         )
-        self.assertIn(self.user.pk, content.get("members"))
+        assert any(
+            [self.user.pk == self_to_id(m) for m in content.get("members")]
+        )
 
     def test020_retrieve(self):
         """
