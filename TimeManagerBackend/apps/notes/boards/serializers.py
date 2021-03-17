@@ -70,6 +70,16 @@ class NotesBoardCreateSerializer(BoardListMixin, Board):  # noqa
 
         return board
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        members = get_user_model().objects.filter(
+            pk__in=data.pop("members", [])
+        )
+        data["members"] = UserSerializer(
+            many=True, context=self.context
+        ).to_representation(members)
+        return data
+
 
 # GET LIST
 class NotesBoardListSerializer(BoardListMixin, Board):  # noqa
