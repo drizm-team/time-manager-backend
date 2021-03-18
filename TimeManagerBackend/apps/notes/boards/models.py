@@ -1,7 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from TimeManagerBackend.lib.commons.firestore import get_firestore
+from TimeManagerBackend.lib.commons.firestore import (
+    get_firestore, DocumentWrapper
+)
 
 
 class NotesBoard(models.Model):
@@ -13,14 +15,17 @@ class NotesBoard(models.Model):
     )
     # The owner will also be a member
     members = models.ManyToManyField(to=get_user_model())
+    created = models.DateTimeField(auto_now_add=True)
     # groups - on groups side
-    # notes - on manager side
 
     @property
     def notes(self):
         db = get_firestore()
         col_ref = db.collection("notes__boards", str(self.pk), "notes")
-        return list(col_ref.list_documents())  # resolve the iterator
+        return [DocumentWrapper(d) for d in col_ref.list_documents()]
+
+    class Meta:
+        ordering = ["created"]
 
 
 __all__ = ["NotesBoard"]

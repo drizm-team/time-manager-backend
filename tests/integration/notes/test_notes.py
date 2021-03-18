@@ -76,6 +76,16 @@ class TestNotes(APITestCase):
             content.get("last_edited")
         )
 
+        if not self.group:
+            url = reverse("notes:boards-detail", args=(self.board.pk,))
+        else:
+            url = reverse(
+                "notes:groups-detail", args=(self.board.pk, self.group.pk)
+            )
+
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
     def test020_delete(self):
         """
         GIVEN I have a user account
