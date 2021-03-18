@@ -28,7 +28,7 @@ deploy_initial:
 	@(exec ./scripts/deploy.sh --initial)
 
 .PHONY: deploy_update
-deploy_start:
+deploy_update:
 	@(exec ./scripts/deploy.sh)
 
 .PHONY: deploy_reset

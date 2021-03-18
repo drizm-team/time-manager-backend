@@ -5,3 +5,5 @@ __pycache__
 .idea
 *.sqlite3
 !docker
+docker/*-data
+.run
