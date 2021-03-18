@@ -22,7 +22,7 @@ class NotesBoard(models.Model):
     def notes(self):
         db = get_firestore()
         col_ref = db.collection("notes__boards", str(self.pk), "notes")
-        return [DocumentWrapper(d) for d in col_ref.list_documents()]
+        return [DocumentWrapper(d.get()) for d in col_ref.list_documents()]
 
     class Meta:
         ordering = ["created"]
