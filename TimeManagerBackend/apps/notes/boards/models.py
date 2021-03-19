@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from google.cloud import firestore
 
 from TimeManagerBackend.lib.commons.firestore import (
     get_firestore, DocumentWrapper
@@ -21,8 +22,12 @@ class NotesBoard(models.Model):
     @property
     def notes(self):
         db = get_firestore()
-        col_ref = db.collection("notes__boards", str(self.pk), "notes")
-        return [DocumentWrapper(d.get()) for d in col_ref.list_documents()]
+        col_query = db.collection(
+            "notes__boards", str(self.pk), "notes"
+        ).order_by(
+            "created", direction=firestore.Query.ASCENDING
+        ).stream()
+        return [DocumentWrapper(d) for d in col_query]
 
     class Meta:
         ordering = ["created"]

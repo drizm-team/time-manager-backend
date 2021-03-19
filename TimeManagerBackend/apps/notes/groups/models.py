@@ -1,6 +1,9 @@
 from django.db import models
+from google.cloud import firestore
 
-from TimeManagerBackend.lib.commons.firestore import get_firestore
+from TimeManagerBackend.lib.commons.firestore import (
+    get_firestore, DocumentWrapper
+)
 
 
 class NotesGroup(models.Model):
@@ -12,19 +15,27 @@ class NotesGroup(models.Model):
         on_delete=models.CASCADE,
         related_name="groups"
     )
+    created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         indexes = [
             models.Index(fields=["parent"])
         ]
+        ordering = ["created"]
 
     @property
     def notes(self):
         db = get_firestore()
-        col_ref = db.collection(
-            "notes__boards", str(self.parent.pk), "groups", str(self.pk), "notes"
-        )
-        return list(col_ref.list_documents())  # resolve the iterator
+        col_query = db.collection(
+            "notes__boards",
+            str(self.parent.pk),
+            "groups",
+            str(self.pk),
+            "notes"
+        ).order_by(
+            "created", direction=firestore.Query.ASCENDING
+        ).stream()
+        return [DocumentWrapper(d) for d in col_query]
 
 
 __all__ = ["NotesGroup"]
