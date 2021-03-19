@@ -32,12 +32,12 @@ class NotesGroupListSerializer(serializers.Serializer):  # noqa
         read_only=True
     )
 
-    def create(self, validated_data):
-        return NotesGroup.objects.create(**validated_data)
-
 
 class NotesGroupDetailSerializer(NotesGroupListSerializer):  # noqa
-    notes = GroupNotesSerializer(many=True)
+    notes = GroupNotesSerializer(many=True, read_only=True)
+
+    def create(self, validated_data):
+        return NotesGroup.objects.create(**validated_data)
 
 
 __all__ = ["NotesGroupListSerializer", "NotesGroupDetailSerializer"]

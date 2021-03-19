@@ -23,7 +23,7 @@ class NotesGroupViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         """ Select a different serializer for LIST and DETAIL. """
-        if self.action in ("list", "create"):
+        if self.action in ("list",):
             return serializers.NotesGroupListSerializer
 
         return serializers.NotesGroupDetailSerializer
