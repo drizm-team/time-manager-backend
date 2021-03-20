@@ -84,7 +84,11 @@ class TestNotes(APITestCase):
             )
 
         res = self.client.get(url)
+        content = res.json()
+        notes = content.get("notes")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(type(notes), list)
+        self.assertGreater(len(notes), 0)
 
     def test020_delete(self):
         """

@@ -27,11 +27,7 @@ class NotesGroup(models.Model):
     def notes(self):
         db = get_firestore()
         col_query = db.collection(
-            "notes__boards",
-            str(self.parent.pk),
-            "groups",
-            str(self.pk),
-            "notes"
+            "notes__groups", str(self.pk), "notes"
         ).order_by(
             "created", direction=firestore.Query.ASCENDING
         ).stream()
