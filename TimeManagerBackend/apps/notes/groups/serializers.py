@@ -39,5 +39,14 @@ class NotesGroupDetailSerializer(NotesGroupListSerializer):  # noqa
     def create(self, validated_data):
         return NotesGroup.objects.create(**validated_data)
 
+    def update(self, instance, validated_data: dict):
+        allowed_attrs = ("title", "color")
+        for attr in allowed_attrs:
+            if v := validated_data.pop(attr, None):
+                setattr(instance, attr, v)
+
+        instance.save()
+        return instance
+
 
 __all__ = ["NotesGroupListSerializer", "NotesGroupDetailSerializer"]

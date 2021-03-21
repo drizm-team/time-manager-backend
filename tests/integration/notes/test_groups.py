@@ -107,7 +107,7 @@ class TestGroups(APITestCase):
         url = reverse(
             self.detail, args=(self.board.pk, pk)
         )
-        res = self.client.get(url)
+        res = self.client.patch(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
     def test050_delete(self):
