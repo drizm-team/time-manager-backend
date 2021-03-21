@@ -1,14 +1,17 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import viewsets, status
+from rest_framework import status
+from rest_framework.request import Request
 from rest_framework.response import Response
 
+from TimeManagerBackend.lib.commons.firestore import get_firestore
+from TimeManagerBackend.lib.viewsets import PatchUpdateModelViewSet
 from . import serializers
 from .models import NotesGroup
 
 
 # /boards/:id/groups/
 # /boards/:id/groups/:id/
-class NotesGroupViewSet(viewsets.ModelViewSet):
+class NotesGroupViewSet(PatchUpdateModelViewSet):
     def get_queryset(self):
         """
         Only allow users to 'see' groups that are
@@ -61,3 +64,28 @@ class NotesGroupViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
             headers=headers
         )
+
+    def destroy(self, request: Request, *args, **kwargs):
+        serializer = serializers.NotesGroupDeleteSerializer(
+            data=request.query_params
+        )
+        serializer.is_valid(raise_exception=True)
+
+        instance: NotesGroup = self.get_object()
+        notes = instance.notes
+        if serializer.data.get("cascade"):
+            for n in notes:
+                n.reference.delete()
+        else:
+            db = get_firestore()
+            col_ref = db.collection(
+                "notes__boards", str(instance.parent_id), "notes"
+            )
+            for n in notes:
+                pk = n.pk
+                data = n._snapshot  # noqa private
+                col_ref.document(pk).set(data.to_dict())
+                n.reference.delete()
+
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)

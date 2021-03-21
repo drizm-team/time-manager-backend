@@ -1,6 +1,9 @@
 from functools import partial
 from typing import Optional
+from uuid import uuid4
 
+from django.http import QueryDict
+from parameterized.parameterized import parameterized
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
@@ -110,7 +113,8 @@ class TestGroups(APITestCase):
         res = self.client.patch(url)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-    def test050_delete(self):
+    @parameterized.expand([(False,), (True,)])
+    def test050_delete(self, cascade):
         """
         GIVEN I have a user account
             AND I am logged in
@@ -124,8 +128,32 @@ class TestGroups(APITestCase):
         content = res.json()
         pk = self_to_id(content)
 
+        # Add a note to the group
+        note_pk = uuid4()
+        url = reverse(
+            "notes:groups-notes", args=(self.board.pk, pk, note_pk)
+        )
+        res = self.client.put(url, data={"content": "Lol idk"})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        boards_url = reverse(
+            "notes:boards-detail", args=(self.board.pk,)
+        )
+        res = self.client.get(boards_url)
+        notes_count = len(res.json().get("notes"))
+
         url = reverse(
             self.detail, args=(self.board.pk, pk)
         )
+        q = QueryDict(mutable=True)
+        q["cascade"] = cascade
+        url = f"{url}?{q.urlencode()}"
         res = self.client.delete(url)
         self.assertEqual(res.status_code, status.HTTP_204_NO_CONTENT)
+
+        res = self.client.get(boards_url)
+        notes = res.json().get("notes")
+        if cascade:
+            self.assertEqual(len(notes), notes_count)
+        else:
+            self.assertGreater(len(notes), notes_count)

@@ -48,6 +48,14 @@ class NotesBoardViewSet(PatchUpdateModelViewSet):
                     )
                 )
 
+    def destroy(self, request: Request, *args, **kwargs):
+        instance: NotesBoard = self.get_object()
+        notes = instance.notes
+        for n in notes:
+            n.reference.delete()
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 # /boards/:id/members/
 class BoardMembersView(APIView):

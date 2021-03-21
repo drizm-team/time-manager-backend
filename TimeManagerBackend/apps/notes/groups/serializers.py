@@ -49,4 +49,12 @@ class NotesGroupDetailSerializer(NotesGroupListSerializer):  # noqa
         return instance
 
 
-__all__ = ["NotesGroupListSerializer", "NotesGroupDetailSerializer"]
+class NotesGroupDeleteSerializer(serializers.Serializer):  # noqa
+    cascade = serializers.BooleanField(default=False)
+
+
+__all__ = [
+    "NotesGroupListSerializer",
+    "NotesGroupDetailSerializer",
+    "NotesGroupDeleteSerializer"
+]
