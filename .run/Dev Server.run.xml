@@ -6,6 +6,7 @@
     <envs>
       <env name="PYTHONUNBUFFERED" value="1" />
       <env name="DJANGO_SETTINGS_MODULE" value="TimeManagerBackend.settings.development" />
+      <env name="FIREBASE_DB_HOST" value="localhost" />
     </envs>
     <option name="SDK_HOME" value="$USER_HOME$/.cache/pypoetry/virtualenvs/timemanagerbackend-VmGxy5hq-py3.8/bin/python" />
     <option name="WORKING_DIRECTORY" value="" />
@@ -13,7 +14,7 @@
     <option name="ADD_CONTENT_ROOTS" value="true" />
     <option name="ADD_SOURCE_ROOTS" value="true" />
     <option name="launchJavascriptDebuger" value="false" />
-    <option name="port" value="8000" />
+    <option name="port" value="8080" />
     <option name="host" value="" />
     <option name="additionalOptions" value="" />
     <option name="browserUrl" value="" />
