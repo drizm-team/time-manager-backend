@@ -29,7 +29,7 @@ class NotesGroup(models.Model):
         col_query = db.collection(
             "notes__groups", str(self.pk), "notes"
         ).order_by(
-            "created", direction=firestore.Query.ASCENDING
+            "created", direction=firestore.Query.DESCENDING
         ).stream()
         return [DocumentWrapper(d) for d in col_query]
 
