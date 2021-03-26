@@ -32,7 +32,8 @@ def get_firestore() -> Client:
 
     # Production does not define extra settings
     if not db_settings:
-        return Client(credentials=credentials)
+        initialize_app(credentials)
+        return firestore.client()
 
     channel = grpc.insecure_channel(
         f"{db_settings.get('HOST')}:{db_settings.get('PORT')}"
