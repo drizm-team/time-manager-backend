@@ -1,6 +1,7 @@
 import os
 import django
-from drizm_commons.utils import Path, Tfvars
+from drizm_commons.utils.pathing import Path
+from drizm_commons.utils.tf import Tfvars
 from google.oauth2 import service_account
 
 from TimeManagerBackend.docs.settings import *  # noqa
@@ -26,7 +27,6 @@ SERVICE_ACCOUNT_GROUP_NAME = "gcp_service_accounts"
 
 INSTALLED_APPS = [
     'drizm_django_commons',  # manage.py overrides
-    'TimeManagerBackend.application.CustomAdmin',  # default admin
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -50,10 +50,10 @@ INSTALLED_APPS = [
     'TimeManagerBackend.apps.images',
 ]
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -77,6 +77,10 @@ DATABASES = {
         'USER': terraform.vars.db_username,
         'PASSWORD': terraform.vars.db_password,
     }
+}
+
+FIRESTORE_DATABASES = {
+    'default': {}
 }
 
 if os.getenv("MIGRATION_MODE"):

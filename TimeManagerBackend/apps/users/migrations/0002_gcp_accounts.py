@@ -6,7 +6,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.db import migrations
-from drizm_commons.utils import Path
+from drizm_commons.utils.pathing import Path
 
 
 def create_service_account_group(*args) -> None:

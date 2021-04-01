@@ -1,15 +1,14 @@
 import random
 import string
 
-from django.conf import settings
-from drizm_commons.google.testing import TestStorageBucket
-from drizm_commons.utils import all_keys_present, url_is_http
-from google.cloud import exceptions
+from django.contrib.auth import get_user_model
+from django.core.files.storage import get_storage_class
+from drizm_commons.testing.truthiness import all_keys_present, uri_is_http
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
+from storages.backends.gcloud import GoogleCloudStorage
 
-from TimeManagerBackend.settings.production import terraform
 from ..conftest import (
     create_test_user,
     TEST_USER_PASSWORD,
@@ -19,19 +18,25 @@ from ..conftest import (
     random_hex_color
 )
 from ..data.b64 import IMG
-from django.contrib.auth import get_user_model
 
 
 class TestUsers(APITestCase):
+    @classmethod
+    def setUpClass(cls):
+        app_base = "users:user-%s"
+        cls.list = app_base % "list"
+        cls.detail = app_base % "detail"
+        cls.change_password = app_base % "change-password"
+        cls.change_email = app_base % "change-email"
+
+        cls._storage: GoogleCloudStorage = get_storage_class()
+        cls.storage = cls._storage.client
+
+        super().setUpClass()
+
     def setUp(self) -> None:
         self.user = create_test_user()
         self.user_pw = TEST_USER_PASSWORD
-
-        app_base = "users:user-%s"
-        self.list = app_base % "list"
-        self.detail = app_base % "detail"
-        self.change_password = app_base % "change-password"
-        self.change_email = app_base % "change-email"
 
     # noinspection PyMethodMayBeStatic
     def _test_response_body(self, body: dict):
@@ -81,7 +86,7 @@ class TestUsers(APITestCase):
         # 'self' should be a valid URL,
         # that when requested returns the same data we just received
         self_ = content["self"]["href"]
-        assert url_is_http(self_)
+        assert uri_is_http(self_)
         self_res = self.client.get(self_)
         self.assertEqual(res.json(), self_res.json())
 
@@ -194,17 +199,6 @@ class TestUsers(APITestCase):
         """
         url = reverse(self.list)
 
-        # Create a testing storage bucket
-        cl = TestStorageBucket(
-            settings.GS_CREDENTIALS,
-            terraform.vars.project_name,
-            bucket_name=settings.GS_BUCKET_NAME
-        )
-        try:
-            cl.create()
-        except exceptions.Conflict:
-            cl.create(obtain_existing=True)
-
         # Create a test image
         image_file = generate_test_image("jpeg")
         b64_image = generate_image_b64(image_file)
@@ -244,9 +238,6 @@ class TestUsers(APITestCase):
             }
         })
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-
-        # Remove the testing bucket
-        cl.destroy()
 
     def test050_update_general(self):
         """

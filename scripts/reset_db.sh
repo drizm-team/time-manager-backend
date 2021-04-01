@@ -22,7 +22,7 @@ sleep 5
 
 query="GRANT pg_signal_backend TO ${settings[2]};
        SELECT pg_terminate_backend(pid), * FROM pg_stat_activity
-       WHERE usename = \"${settings[2]}\" AND pid <> pg_backend_pid();
+       WHERE usename = '${settings[2]}' AND pid <> pg_backend_pid();
        DROP DATABASE \"${settings[1]}\";
        CREATE DATABASE \"${settings[1]}\" OWNER \"${settings[2]}\";"
 

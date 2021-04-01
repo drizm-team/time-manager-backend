@@ -33,6 +33,6 @@ poetry run python manage.py collectstatic --no-input
 kill $pid
 
 make requirements
-gcloud app deploy
+gcloud app deploy --quiet
 
 exit 0

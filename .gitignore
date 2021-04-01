@@ -2,9 +2,9 @@
 .idea
 venv
 *.env
-.run
 keys
 TimeManagerBackend/settings/keys.py
+.firebasekey
 
 # Exclude compiled files and caches
 __pycache__
@@ -25,5 +25,13 @@ dist
 *.tfstate.backup
 terraform.plan
 
-# Exclude dev database
+# Exclude dev database and logs
 *.sqlite3
+*.log
+
+# Exclude all docker volumes
+docker/*
+!docker/docker-compose*.yml
+!docker/*entrypoint.sh
+!docker/*.dockerfile
+!docker/*.md

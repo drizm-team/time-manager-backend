@@ -3,12 +3,12 @@ from typing import Optional
 
 from django.http import QueryDict
 from django.utils import timezone
-from drizm_commons.utils import all_keys_present
+from drizm_commons.testing.truthiness import all_keys_present
 from rest_framework import status
 from rest_framework.reverse import reverse
 from rest_framework.test import APITestCase
 
-from ..conftest import create_test_user, TEST_USER_PASSWORD
+from ..conftest import create_test_user
 
 BASE_TIME = datetime.now()
 EXAMPLE_CONTENT = {
@@ -21,13 +21,16 @@ EXAMPLE_CONTENT = {
 
 
 class TestEvents(APITestCase):
-    def setUp(self) -> None:
-        self.user_pw = TEST_USER_PASSWORD
-        self.user = create_test_user()
-
+    @classmethod
+    def setUpClass(cls):
         app_base = "events:event-%s"
-        self.list = app_base % "list"
-        self.detail = app_base % "detail"
+        cls.list = app_base % "list"
+        cls.detail = app_base % "detail"
+
+        super().setUpClass()
+
+    def setUp(self) -> None:
+        self.user = create_test_user()
 
     def _sample_create(self, content=None):
         """ Generate a generic test event """

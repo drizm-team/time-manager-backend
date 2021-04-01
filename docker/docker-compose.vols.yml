@@ -1,0 +1,14 @@
+version: "3.4"
+
+services:
+  database:
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+  firebase:
+    volumes:
+      - ./firestore-data:/firestore-data
+
+  cloud-storage:
+    volumes:
+      - ./gcs-data:/data

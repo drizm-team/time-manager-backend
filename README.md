@@ -39,6 +39,7 @@ through the exodia service account.
 - ./keys/
 - ./TimeManagerBackend/settings/keys.py
 - ./.terraform/terraform.tfvars
+- ./.firebasekey
 
 #### keys folder Contents
 
@@ -73,13 +74,45 @@ Example Syntax:
 key = "string-value"
 key2 = "another-string-value"
 
-Once everything is done, simply run:  
-``cd docker``  
-``docker-compose up --build``
+#### .firebasekey Contents
 
-## Deployment
+Remember to select the correct project
+here, it is already listed in the
+``.firebaserc`` file.
 
-### Prerequsites
+For this you simply need to run
+``firebase login:ci``.
+You then copy the resulting key
+into the ``.firebasekey`` file.
+
+### Local Deployment
+
+If you are using Chrome, you will
+need to enable the following flag:  
+``chrome://flags/#allow-insecure-localhost``
+
+Run the following commands:
+```bash
+cd docker
+mkdir -p gcs-data/test
+docker-compose -p timemanagerbackend \
+    -f docker-compose.yml \
+    -f docker-compose.vols.yml \
+    -f docker-compose.srv.yml \
+    up
+```
+
+To later remove the services, as well
+as all the test data, simply run:
+```bash
+docker-compose -p "timemanagerbackend" \
+  down --volumes
+)
+```
+
+### Remote Deployment
+
+#### Prerequsites
 
 - Gsutil, Gcloud, CloudSDK
 - CloudSQL Proxy
@@ -87,6 +120,8 @@ Once everything is done, simply run:
 - Tfenv (Terraform)
 - Access to GCP project via CLI
 - Auth credentials for project in CLI
+
+#### Running
 
 For initial deployment:  
 ``make deploy_initial``  
@@ -97,8 +132,3 @@ For refresh deployments:
 To completely reset and
 update a deployment:  
 ``make deploy_reset``
-
-## Documentation
-
-Setting for keys-folder:  
-GCP_CREDENTIALS = Path
