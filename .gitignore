@@ -2,7 +2,9 @@
 .idea
 venv
 *.env
-.run
+keys
+TimeManagerBackend/settings/keys.py
+.firebasekey
 
 # Exclude compiled files and caches
 __pycache__
@@ -16,10 +18,20 @@ build
 dist
 *.egg-info
 
-TimeManagerBackend/settings/keys.py
-*.sqlite3
-*.tfvars
-keys
+# Exclude Terraform files
 .terraform/.terraform
-terraform.plan
 *.tfstate
+*.tfvars
+*.tfstate.backup
+terraform.plan
+
+# Exclude dev database and logs
+*.sqlite3
+*.log
+
+# Exclude all docker volumes
+docker/*
+!docker/docker-compose*.yml
+!docker/*entrypoint.sh
+!docker/*.dockerfile
+!docker/*.md

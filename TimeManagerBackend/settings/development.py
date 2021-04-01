@@ -1,11 +1,28 @@
+import uuid
+import os
+
+from google.auth.credentials import AnonymousCredentials
+
 from .production import *  # noqa
 
 DEBUG = True
+DEBUG_PROPAGATE_EXCEPTIONS = True
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': os.getenv('DJANGO_DB_NAME', 'default'),
+        'USER': 'root',
+        'PASSWORD': 'root',
+        'HOST': os.getenv('DJANGO_DB_HOST', 'localhost'),
+        'PORT': '5432',
+    }
+}
+
+FIRESTORE_DATABASES = {
+    'default': {
+        'HOST': os.getenv('FIREBASE_DB_HOST', 'firebase'),
+        'PORT': '8090',
     }
 }
 
@@ -15,6 +32,7 @@ MIDDLEWARE = [
 
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
 
@@ -34,6 +52,17 @@ MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]
 INTERNAL_IPS = [
     "127.0.0.1"
 ]
+ALLOWED_HOSTS = ["*"]
 
-STATIC_URL = '/static/'
-STATIC_ROOT = '/var/django/projects/TimeManagerBackend/static/'  # noqa
+# Save all FileField and ImageField files to GCS
+DEFAULT_FILE_STORAGE = 'TimeManagerBackend.lib.commons.gcs.EmulatedGCS'
+
+# Save all 'collectstatic' files to GCS
+STATICFILES_STORAGE = 'TimeManagerBackend.lib.commons.gcs.EmulatedGCS'
+
+GS_CUSTOM_ENDPOINT = os.environ.get(
+    "STATIC_CUSTOM_COLLECTION_ENDPOINT", "https://localhost:4443"
+)
+GS_CREDENTIALS = AnonymousCredentials()
+GS_PROJECT_ID = "test"
+GS_BUCKET_NAME = "test"

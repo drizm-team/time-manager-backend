@@ -1,10 +1,19 @@
 from django.urls import path
+from rest_framework import routers
 
-from .views import user_viewset_detail, user_viewset_list
+from . import views
 
 app_name = "users"
+router = routers.SimpleRouter()
+
+router.register(r"", views.UserViewSet, basename="user")
 
 urlpatterns = [
-    path("", user_viewset_list, name="user-list"),
-    path("<int:pk>/", user_viewset_detail, name="user-detail")
+    path(
+        "__flush_expired__/",
+        views.__manage_flush_expired__,
+        name="flush_expired"
+    )
 ]
+
+urlpatterns += router.urls

@@ -1,59 +1,57 @@
-FROM debian:stable-slim AS build
+FROM python:3.8.6-buster
 
-RUN apt-get update && apt-get install -y \
-    curl ca-certificates mime-support python3-dev build-essential zlib1g-dev libssl-dev \
-    libffi-dev libsqlite3-dev sqlite3
+RUN apt-get update -y
+RUN apt-get install -y nginx nginx-extras gcc libsqlite3-dev \
+    python3-dev curl ca-certificates mime-support
 
-RUN apt-get install make --reinstall
+# Install envsubst
+RUN apt-get -y install gettext-base
 
-# Build Python
-WORKDIR /opt/cpython3/
-RUN curl -O "https://www.python.org/ftp/python/3.8.2/Python-3.8.2.tar.xz"
-RUN tar -xf "Python-3.8.2.tar.xz"
-WORKDIR Python-3.8.2
-RUN ./configure --enable-optimizations
-RUN make -j "$(nproc)"
-
-
-
-FROM nginx:stable
-
-RUN apt-get update && apt-get install -y \
-    curl ca-certificates mime-support make gcc libsqlite3-dev
-
-# Install Python
-COPY --from=build /opt/cpython3 /opt/cpython3
-WORKDIR /opt/cpython3/Python-3.8.2/
-RUN make install
-RUN python3.8 -m pip install poetry uwsgi
+# Install Poetry and uWSGI
+RUN python -m pip install poetry uwsgi
 
 # Copy apps and related dependencies
 WORKDIR /application/
 COPY ["pyproject.toml", "poetry.lock", "manage.py", "./"]
 RUN poetry config virtualenvs.create false
+# We may still need APT deps here for buiding wheels
 RUN poetry install --no-root --no-dev
+
+RUN apt-get -y autoremove \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /application/TimeManagerBackend/
 COPY ["TimeManagerBackend", "./"]
 
 # Set envvars
-ENV DJANGO_SETTINGS_MODULE TimeManagerBackend.settings.production
 ENV NGINX_HOST localhost
 ENV NGINX_PORT 8080
-
-WORKDIR /application/.terraform/
-COPY ./.terraform .
 
 WORKDIR /application/keys/
 COPY ./keys .
 
+WORKDIR /application/.terraform/
+COPY ./.terraform .
+
 WORKDIR /application/
+
+# Download statically linked tini
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini-static /tini
+RUN chmod +x /tini
 
 # Entrypoint compiles Nginx config & starts uWSGI
 COPY server/nginx-default.conf.template /etc/nginx/conf.d/default.conf.template
 COPY server/uwsgi.ini /
 COPY docker/docker-entrypoint.sh /
-ENTRYPOINT ["/docker-entrypoint.sh"]
+RUN chmod +x /docker-entrypoint.sh
 
+# Wrap the default entrypoint in tini to get a proper PID 1 process
+ENTRYPOINT ["/tini", "--", "/docker-entrypoint.sh"]
+
+# Start the nginx process
 CMD ["nginx", "-g", "daemon off;"]
 EXPOSE ${NGINX_PORT}
+# Expose service ports for gRPC connection
+EXPOSE 8090/tcp 9090/tcp

@@ -1,20 +1,32 @@
 import os
 import django
+from drizm_commons.utils.pathing import Path
+from drizm_commons.utils.tf import Tfvars
 from google.oauth2 import service_account
 
 from TimeManagerBackend.docs.settings import *  # noqa
 from datetime import timedelta
-from drizm_commons.utils import Tfvars, Path
 from .keys import *  # noqa
+import sys
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DEBUG = False
+DEBUG_PROPAGATE_EXCEPTIONS = False
+TESTING = 'test' in sys.argv  # detect if we are running tests
 
 terraform = Tfvars(
     Path(__file__).parents[2] / ".terraform" / "terraform.tfvars"
 )
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# All of these are used for the custom GCP-Auth
+GCP_CREDENTIALS = Path(__file__).parents[2] / "keys"
+GS_CREDENTIALS_FILE = GCP_CREDENTIALS / "exodia_cron.json"
+SERVICE_ACCOUNT_GROUP_NAME = "gcp_service_accounts"
+
+
+
 INSTALLED_APPS = [
     'drizm_django_commons',  # manage.py overrides
-    'TimeManagerBackend.application.CustomAdmin',  # default admin
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -25,30 +37,58 @@ INSTALLED_APPS = [
     'rest_framework',
     'drf_yasg',
     'corsheaders',
+    'django_prometheus',
+    'rest_framework_simplejwt.token_blacklist',
+
+    # Default apps
+    'TimeManagerBackend.apps.users',
+    'TimeManagerBackend.apps.tokens',
 
     # User defined apps
-    'TimeManagerBackend.apps.errors',
-    'TimeManagerBackend.apps.users',
-    'TimeManagerBackend.apps.notes'
+    'TimeManagerBackend.apps.events',
+    'TimeManagerBackend.apps.notes',
+    'TimeManagerBackend.apps.images',
+]
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django_prometheus.middleware.PrometheusBeforeMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django_prometheus.middleware.PrometheusAfterMiddleware'
 ]
 
-CLOUD_SQL_CONN_NAME = "time-manager-295921:europe-west4:time-manager-backend-db"
+
+
+""" ORM Config """
+CLOUD_SQL_CONN_NAME = f"{terraform.vars.project_name}:" \
+                      f"{terraform.vars.project_region}:{terraform.vars.db_service_name}"
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'ENGINE': 'django_prometheus.db.backends.postgresql',
         'HOST': f"/cloudsql/{CLOUD_SQL_CONN_NAME}",
         'PORT': "5432",
-        'NAME': "time-manager-main-database",
+        'NAME': terraform.vars.db_name,
         'USER': terraform.vars.db_username,
         'PASSWORD': terraform.vars.db_password,
     }
 }
 
-# In case we are currently in migration mode
+FIRESTORE_DATABASES = {
+    'default': {}
+}
+
 if os.getenv("MIGRATION_MODE"):
     DATABASES["default"]["HOST"] = "localhost"
 
+
+
+""" Auth / Security Config """
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated'
@@ -58,7 +98,7 @@ REST_FRAMEWORK = {
     ],
     'TEST_REQUEST_DEFAULT_FORMAT': 'json',
     'EXCEPTION_HANDLER':
-        'TimeManagerBackend.apps.errors.handler.global_default_exception_handler'
+        'TimeManagerBackend.lib.errors.handler.global_default_exception_handler'  # noqa
 }
 
 SIMPLE_JWT = {
@@ -68,26 +108,15 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
-DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
-STATIC_URL = '/static/'
-GS_BUCKET_NAME = terraform.vars.static_bucket_name
-GS_PROJECT_ID = terraform.vars.project_name
-STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
-GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
-    Path(__file__).parents[2] / "keys" / "exodia.json"
-)
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "media"),
+ALLOWED_HOSTS = [
+    terraform.vars.srv_deploy_domain
 ]
 
-DEBUG = False
 AUTH_USER_MODEL = 'users.User'
 
-ALLOWED_HOSTS = [
-    "api.chrono.drizm.com"
-]
 
-# CORS Configuration
+
+""" CORS Configuration """
 CORS_ALLOW_METHODS = [
     'GET',
     'POST',
@@ -100,24 +129,58 @@ CORS_EXPOSE_HEADERS = [
     "Content-Disposition"
 ]
 CORS_ALLOWED_ORIGINS = [
-    "chrono.drizm.com",
-    "api.chrono.drizm.com"
+    "https://chrono.drizm.com",
 ]
-CORS_ALLOW_CREDENTIALS = True
+# This applies only to cookies, the integrated system
+# is using Header based Token-Auth
+CORS_ALLOW_CREDENTIALS = False
+# Anything longer than 10 minutes is pointless for REST
+CROS_PREFLIGHT_MAX_AGE = 600
 
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+
+""" File Handling Config """
+STATIC_URL = '/static/'
+
+DEFAULT_FILE_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+
+# This is to protect from too large request bodies being used for DoS
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1048576  # 1MiB
+# With our current requirements the maximum filesize is capped at 200KB
+# So this value is okay and still gives some leeway
+MAX_UPLOAD_SIZE = 512000  # 500KiB
+
+STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
+
+GS_CREDENTIALS = service_account.Credentials.from_service_account_file(
+    GS_CREDENTIALS_FILE
+)
+GS_BUCKET_NAME = terraform.vars.static_bucket_name
+GS_PROJECT_ID = terraform.vars.project_name
+GS_QUERYSTRING_AUTH = False
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "media"),
 ]
 
+
+
+""" Internationlization Config """
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE = 'UTC'
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+
+
+
+
+""" You probably wont need to touch these """
 ROOT_URLCONF = 'TimeManagerBackend.urls'
+WSGI_APPLICATION = 'TimeManagerBackend.wsgi.application'
 
+# Without the changes in FORM_RENDERER and TEMPLATE["DIRS"]
+# global template directories would not work properly
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -136,10 +199,7 @@ TEMPLATES = [
         },
     },
 ]
-
 FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
-
-WSGI_APPLICATION = 'TimeManagerBackend.wsgi.application'
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -156,8 +216,53 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True
-USE_L10N = True
-USE_TZ = True
+
+
+""" Load in the Deployment Settings """
+# if we are running on CloudRun, configure stackdriver logging
+if os.getenv("GAE_APPLICATION"):
+    from google.cloud import logging
+    from google.cloud.logging.resource import Resource
+
+    resource_type = 'gae_app'
+    resource_labels = {
+        'project_id': os.getenv("GOOGLE_CLOUD_PROJECT"),
+        'service_id': os.getenv("GAE_DEPLOYMENT_ID"),
+        'version_id': os.getenv("GAE_VERSION")
+    }
+
+    client = logging.Client().from_service_account_json(GS_CREDENTIALS_FILE)
+    # Connects the logger to the root logging handler; by default
+    # this captures all logs at INFO level and higher
+    client.setup_logging()
+    LOGGING = {
+        'version': 1,
+        'handlers': {
+            'stackdriver': {
+                'class': 'google.cloud.logging.handlers.CloudLoggingHandler',
+                'client': client,
+                'resource': Resource(resource_type, resource_labels),
+            }
+        },
+        'loggers': {
+            'cloud': {
+                'handlers': ['stackdriver'],
+                'level': 'DEBUG',
+                'name': 'cloud'
+            },
+            'failure-500': {
+                'handlers': ['stackdriver'],
+                'level': 'ERROR',
+                'name': 'failure-500'
+            },
+            'django': {
+                'handlers': ['stackdriver'],
+                'level': 'WARNING',
+                'propagate': True
+            },
+            'django.request': {
+                'handlers': ['stackdriver'],
+                'level': 'WARNING',
+            },
+        }
+    }
